@@ -3,7 +3,7 @@ build/
 dist/
 lib/*
 .externalToolBuilders/
-src/main/com/
+src/main/com/*
 .project
 .classpath
 .settings
