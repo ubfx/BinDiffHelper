@@ -13,22 +13,26 @@ public class ComparisonTableModel extends AbstractTableModel {
     		"Import",
     		"Address this file",
     		"Name this file",
+    		"Name Database",
     		"Address other file",
     		"Name other file",
-    		"Similarity"
+    		"Similarity",
+    		"Algorithm"
     };
     
     private List<Entry> data;
     
 
-    public ComparisonTableModel()
-    {
+    public ComparisonTableModel() {
     	data = new ArrayList<Entry>();
     }
     
-    public void addEntry(Entry e)
-    {
+    public void addEntry(Entry e) {
     	data.add(e);
+    }
+    
+    public List<Entry> getEntries() {
+    	return data;
     }
     
     public int getColumnCount() {
@@ -52,16 +56,17 @@ public class ComparisonTableModel extends AbstractTableModel {
     	case 1:
     		return "0x" + Long.toHexString(e.primaryAddress.getUnsignedOffset());
     	case 2:
-    		if (e.symbolRenamed())
-    			return "DB: " + e.primaryFunctionName + " / opened: " + e.primaryFunctionSymbol.getName();
-    		
-    		return e.primaryFunctionName;
+    		return e.primaryFunctionSymbol.getName();
     	case 3:
-    		return "0x" + Long.toHexString(e.secondaryAddress);
+    		return e.primaryFunctionName;
     	case 4:
-    		return e.secondaryFunctionName;
+    		return "0x" + Long.toHexString(e.secondaryAddress);
     	case 5:
-    		return e.similarity;    			
+    		return e.secondaryFunctionName;
+    	case 6:
+    		return e.similarity;    	
+    	case 7:
+    		return e.algorithm;
     	}
     	
     	return null;
@@ -78,6 +83,8 @@ public class ComparisonTableModel extends AbstractTableModel {
     public Class<?> getColumnClass(int c) {
     	if (c == 0)
     		return Boolean.class;
+    	//else if (c == 5)
+    	//	return Double.class;
     	
     	return String.class;
     }
@@ -104,8 +111,9 @@ public class ComparisonTableModel extends AbstractTableModel {
     	final long secondaryAddress;
     	final String secondaryFunctionName;
     	final double similarity;
+    	final String algorithm;
     	
-    	public Entry(boolean i, Address pa, String pfn, Symbol pfs, long sa, String sfn, double sim)
+    	public Entry(boolean i, Address pa, String pfn, Symbol pfs, long sa, String sfn, double sim, String alg)
     	{
     		do_import = i;
     		primaryAddress = pa;
@@ -114,6 +122,7 @@ public class ComparisonTableModel extends AbstractTableModel {
     		secondaryAddress = sa;
     		secondaryFunctionName = sfn;
     		similarity = sim;
+    		algorithm = alg;
     	}
     	
     	public boolean symbolRenamed()

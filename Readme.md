@@ -40,3 +40,5 @@ and make sure the checkbox next to BinDiffHelperPlugin is checked.
 ## References
 * https://www.zynamics.com/bindiff/manual/
 * https://github.com/google/binexport/tree/v11/java/BinExport
+
+Icons from: [Fatcow free icons](https://www.fatcow.com/free-icons)

@@ -18,7 +18,6 @@ package bindiffhelper;
 import ghidra.app.ExamplesPluginPackage;
 import ghidra.app.plugin.PluginCategoryNames;
 import ghidra.app.plugin.ProgramPlugin;
-import ghidra.app.plugin.core.codebrowser.CodeBrowserPlugin;
 import ghidra.app.services.CodeViewerService;
 import ghidra.framework.plugintool.PluginInfo;
 import ghidra.framework.plugintool.PluginTool;
@@ -54,7 +53,6 @@ public class BinDiffHelperPlugin extends ProgramPlugin {
 		provider.setTitle("BinDiffHelper");
 		provider.addToTool();
 		
-		
 	}
 
 	@Override
@@ -69,6 +67,5 @@ public class BinDiffHelperPlugin extends ProgramPlugin {
 	{
 		provider.setProgram(p);
 	}
-	
 	
 }

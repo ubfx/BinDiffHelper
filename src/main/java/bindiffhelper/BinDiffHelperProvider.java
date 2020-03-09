@@ -16,6 +16,7 @@
 package bindiffhelper;
 
 import java.awt.BorderLayout;
+import java.awt.Dimension;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.io.File;
@@ -25,8 +26,6 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.Statement;
-import java.util.ArrayList;
-import java.util.List;
 
 import javax.swing.JComponent;
 import javax.swing.JPanel;
@@ -34,24 +33,22 @@ import javax.swing.JScrollPane;
 
 import docking.ActionContext;
 import docking.DockingWindowManager;
+import docking.WindowPosition;
 import docking.action.DockingAction;
 import docking.action.MenuData;
 import docking.action.ToolBarData;
 import docking.widgets.table.GTable;
-import ghidra.app.context.ProgramContextAction;
 import ghidra.app.services.CodeViewerService;
+import ghidra.framework.cmd.Command;
 import ghidra.framework.plugintool.ComponentProviderAdapter;
 import ghidra.program.flatapi.FlatProgramAPI;
 import ghidra.program.model.address.Address;
 import ghidra.program.model.address.AddressSpace;
 import ghidra.program.model.listing.Program;
-import ghidra.program.model.symbol.SourceType;
 import ghidra.program.model.symbol.Symbol;
 import ghidra.program.util.ProgramLocation;
 import ghidra.util.HTMLUtilities;
 import ghidra.util.Msg;
-import ghidra.util.exception.DuplicateNameException;
-import ghidra.util.exception.InvalidInputException;
 import resources.ResourceManager;
 
 public class BinDiffHelperProvider extends ComponentProviderAdapter {
@@ -60,6 +57,8 @@ public class BinDiffHelperProvider extends ComponentProviderAdapter {
 	
 	protected JPanel gui;
 	protected GTable table;
+	ComparisonTableModel ctm;
+	
 	protected JScrollPane scrollPane;
 	
 	protected Connection conn;
@@ -71,14 +70,28 @@ public class BinDiffHelperProvider extends ComponentProviderAdapter {
 	protected CodeViewerService cvs;
 	
 	public BinDiffHelperProvider(BinDiffHelperPlugin plugin, Program program) {
-		super(plugin.getTool(), "BinDiffHelper GUI Provider", plugin.getName(), ProgramContextAction.class);
+		super(plugin.getTool(), "BinDiffHelper GUI Provider", plugin.getName());
 		
 		this.plugin = plugin;
 		setProgram(program);
-		createActions();
+		
+		setIcon(ResourceManager.loadImage("images/bdh.png"));
 		
 		gui = new JPanel(new BorderLayout());
+	
 		gui.setFocusable(true);
+		gui.setMinimumSize(new Dimension(400, 400));
+		gui.setPreferredSize(new Dimension(1400, 850));
+		
+		setDefaultWindowPosition(WindowPosition.WINDOW);
+		
+		createActions();
+	}
+	
+	public void refresh()
+	{
+		gui.revalidate();
+		gui.repaint();
 	}
 	
 	private void createActions()
@@ -86,7 +99,7 @@ public class BinDiffHelperProvider extends ComponentProviderAdapter {
 		OpenFromBDFileAction odb = new OpenFromBDFileAction(plugin);
 		OpenFromProjectAction op = new OpenFromProjectAction(plugin);
 		
-		fna = new ImportFunctionNamesAction(plugin, api);
+		fna = new ImportFunctionNamesAction(plugin);
 		fna.setEnabled(false);
 		
 		addLocalAction(odb);
@@ -103,6 +116,14 @@ public class BinDiffHelperProvider extends ComponentProviderAdapter {
 	@Override
 	public JComponent getComponent() {
 		return gui;
+	}
+	
+	public void execute(Command c)
+	{
+		if (program == null)
+			return;
+		
+		tool.execute(c, program);
 	}
 	
 	public void setProgram(Program p)
@@ -209,7 +230,7 @@ public class BinDiffHelperProvider extends ComponentProviderAdapter {
 			}
 			
 			Statement stmt = conn.createStatement();
-			ResultSet rs = stmt.executeQuery("SELECT id, address1, address2, similarity FROM function ORDER BY similarity DESC");
+			ResultSet rs = stmt.executeQuery("SELECT address1, address2, similarity, name FROM function JOIN functionalgorithm ON function.algorithm=functionalgorithm.id ORDER BY similarity DESC");
 			
 			String priAddressCol, secAddressCol;
 			if (loadedProgramIndex == 0)
@@ -226,7 +247,7 @@ public class BinDiffHelperProvider extends ComponentProviderAdapter {
 			AddressSpace addrSpace = program.getAddressFactory().getDefaultAddressSpace();
 			
 			
-			ComparisonTableModel ctm = new ComparisonTableModel();
+			ctm = new ComparisonTableModel();
 			
 			while (rs.next())
 			{
@@ -237,14 +258,19 @@ public class BinDiffHelperProvider extends ComponentProviderAdapter {
 				
 				Symbol s = api.getSymbolAt(priAddress);
 				
+				String priFn = bi[0].getFunctionName(priAddress);
+				String secFn = bi[1].getFunctionName(secAddress);
+				
+				boolean defaultTicked = similarity == 1.0f && !secFn.startsWith("thunk_FUN_") && !secFn.startsWith("FUN_") && !priFn.equals(secFn);
 				ctm.addEntry(
-						new ComparisonTableModel.Entry(similarity == 1.0f,
+						new ComparisonTableModel.Entry(defaultTicked,
 								priAddress,
-								bi[0].getFunctionName(priAddress),
+								priFn,
 								s,
 								secAddress,
-								bi[1].getFunctionName(secAddress),
-								similarity)
+								secFn,
+								similarity,
+								rs.getString("name"))
 				);
 			}
 			stmt.close();
@@ -257,10 +283,12 @@ public class BinDiffHelperProvider extends ComponentProviderAdapter {
 			{
 				table = new GTable();
 				scrollPane = new JScrollPane(table);
+				gui.removeAll();
 				gui.add(scrollPane, BorderLayout.CENTER);
 			}
 			
 			table.setModel(ctm);
+			
 			table.getColumn("Import").setMaxWidth(50);
 			table.setAutoResizeMode(GTable.AUTO_RESIZE_ALL_COLUMNS);
 			
@@ -268,25 +296,13 @@ public class BinDiffHelperProvider extends ComponentProviderAdapter {
 				public void mousePressed(MouseEvent e) {
 					if (e.getClickCount() == 2 && table.getSelectedRow() != -1)
 					{
-						var entry = ((ComparisonTableModel)table.getModel()).getEntry(table.getSelectedRow());
-						
-						try {
-							entry.primaryFunctionSymbol.setName("abcdef", SourceType.IMPORTED);
-						} catch (DuplicateNameException e1) {
-							// TODO Auto-generated catch block
-							e1.printStackTrace();
-						} catch (InvalidInputException e1) {
-							// TODO Auto-generated catch block
-							e1.printStackTrace();
-						}
-						
-						AddressSpace addrSpace = program.getAddressFactory().getDefaultAddressSpace();
-						
-						cvs.goTo(new ProgramLocation(program, addrSpace.getAddress(0x10000)), true);
+						var entry = ctm.getEntry(table.getSelectedRow());
+						cvs.goTo(new ProgramLocation(program, entry.primaryAddress), true);
 					}
 				}
 			});
 			
+			fna.setEntries(ctm.getEntries());
 			fna.setEnabled(true);
 			
 			gui.revalidate();
@@ -297,7 +313,7 @@ public class BinDiffHelperProvider extends ComponentProviderAdapter {
 		}		
 	}
 	
-	public class OpenFromBDFileAction extends DockingAction implements ImportDialog.Caller {
+	public class OpenFromBDFileAction extends DockingAction implements OpenDialog.Caller {
 
 		BinDiffHelperPlugin plugin;
 		
@@ -306,7 +322,7 @@ public class BinDiffHelperProvider extends ComponentProviderAdapter {
 			
 			this.setMenuBarData(new MenuData(new String[] { "Open", "From BinDiffFile" }, "Open"));
 			
-			setToolBarData(new ToolBarData(ResourceManager.loadImage("images/BDH.png"), ""));
+			setToolBarData(new ToolBarData(ResourceManager.loadImage("images/open_db.png"), ""));
 
 			setDescription(HTMLUtilities.toHTML("Open from BinDiff output file"));
 			
@@ -321,7 +337,8 @@ public class BinDiffHelperProvider extends ComponentProviderAdapter {
 
 		@Override
 		public void actionPerformed(ActionContext context) {
-			ImportDialog d = new ImportDialog(this);
+			OpenDialog d = new OpenDialog(this, "Open BinDiff 6 file", "de.ubfx.bindiffhelper.bindiffinputfile",
+					"Select the File created with BinDiff 6 (usually ends in .BinDiff)");
 			DockingWindowManager.showDialog(d, plugin.provider.getComponent());
 		}
 
@@ -332,14 +349,14 @@ public class BinDiffHelperProvider extends ComponentProviderAdapter {
 		
 	}
 	
-	public class OpenFromProjectAction extends DockingAction implements ImportDialog.Caller {
+	public class OpenFromProjectAction extends DockingAction implements OpenDialog.Caller {
 
 		public OpenFromProjectAction(BinDiffHelperPlugin plugin) {
 			super("Open from Project", plugin.getName());
 			
 			this.setMenuBarData(new MenuData(new String[] { "Open", "From Project" }, "Open"));
 			
-			setToolBarData(new ToolBarData(ResourceManager.loadImage("images/BDH.png"), ""));
+			setToolBarData(new ToolBarData(ResourceManager.loadImage("images/open_from_project.png"), ""));
 
 			setDescription(HTMLUtilities.toHTML("Open from Project"));
 			
