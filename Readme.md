@@ -1,4 +1,4 @@
-#BinDiffHelper
+# BinDiffHelper
 
 Ghidra extension that helps importing function names from BinDiffs (BinDiff 6 supported).
 
