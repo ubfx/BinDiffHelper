@@ -16,6 +16,6 @@ You need to set the **GHIDRA_INSTALLATION_DIR** environment variable and then
 gradle
 ```
 
-##References
+## References
 * https://www.zynamics.com/bindiff/manual/
 * https://github.com/google/binexport/tree/v11/java/BinExport
