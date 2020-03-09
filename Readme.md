@@ -7,7 +7,7 @@ Requirements:
 
 * Ghidra installation (https://ghidra-sre.org) or compiled from source
 * some jdk (if you built ghidra yourself, it needs to be the same jdk)
-* gradle (tested with 6.2.2)
+* gradle (tested with 5.0 and 6.2.2)
 
 ### Build it
 You need to set the **GHIDRA_INSTALLATION_DIR** environment variable to the ghidra installation dir.
