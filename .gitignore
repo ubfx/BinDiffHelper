@@ -1,0 +1,9 @@
+bin/
+build/
+dist/
+lib/*
+.externalToolBuilders/
+src/main/com/
+.project
+.classpath
+.settings
