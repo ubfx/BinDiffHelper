@@ -30,11 +30,11 @@ import ghidra.program.model.listing.Program;
  */
 //@formatter:off
 @PluginInfo(
-	status = PluginStatus.STABLE,
+	status = PluginStatus.UNSTABLE,
 	packageName = ExamplesPluginPackage.NAME,
 	category = PluginCategoryNames.ANALYSIS,
-	shortDescription = "Plugin short description goes here.",
-	description = "Plugin long description goes here.",
+	shortDescription = "This plugin helps importing function names using BinDiff 6",
+	description = "This plugin helps importing function names using BinDiff 6",
 	servicesRequired = { CodeViewerService.class }
 )
 //@formatter:on
