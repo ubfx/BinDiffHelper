@@ -2,6 +2,10 @@ apply plugin: 'java'
 apply plugin: 'com.google.protobuf'
 apply plugin: 'eclipse'
 
+repositories {
+    mavenCentral()
+}
+
 buildscript {
     repositories {
         mavenCentral()
