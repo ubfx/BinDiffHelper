@@ -45,10 +45,13 @@ import ghidra.program.flatapi.FlatProgramAPI;
 import ghidra.program.model.address.Address;
 import ghidra.program.model.address.AddressSpace;
 import ghidra.program.model.listing.Program;
+import ghidra.program.model.symbol.SourceType;
 import ghidra.program.model.symbol.Symbol;
 import ghidra.program.util.ProgramLocation;
 import ghidra.util.HTMLUtilities;
 import ghidra.util.Msg;
+import ghidra.util.exception.DuplicateNameException;
+import ghidra.util.exception.InvalidInputException;
 import resources.ResourceManager;
 
 public class BinDiffHelperProvider extends ComponentProviderAdapter {
@@ -265,6 +268,18 @@ public class BinDiffHelperProvider extends ComponentProviderAdapter {
 				public void mousePressed(MouseEvent e) {
 					if (e.getClickCount() == 2 && table.getSelectedRow() != -1)
 					{
+						var entry = ((ComparisonTableModel)table.getModel()).getEntry(table.getSelectedRow());
+						
+						try {
+							entry.primaryFunctionSymbol.setName("abcdef", SourceType.IMPORTED);
+						} catch (DuplicateNameException e1) {
+							// TODO Auto-generated catch block
+							e1.printStackTrace();
+						} catch (InvalidInputException e1) {
+							// TODO Auto-generated catch block
+							e1.printStackTrace();
+						}
+						
 						AddressSpace addrSpace = program.getAddressFactory().getDefaultAddressSpace();
 						
 						cvs.goTo(new ProgramLocation(program, addrSpace.getAddress(0x10000)), true);

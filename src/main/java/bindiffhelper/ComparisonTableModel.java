@@ -91,14 +91,19 @@ public class ComparisonTableModel extends AbstractTableModel {
         fireTableCellUpdated(row, col);
     }
     
+    public Entry getEntry(int row)
+    {
+    	return data.get(row);
+    }
+    
     public static class Entry {
     	boolean do_import;
-    	Address primaryAddress;
-    	String primaryFunctionName;
-    	Symbol primaryFunctionSymbol;
-    	long secondaryAddress;
-    	String secondaryFunctionName;
-    	double similarity;
+    	final Address primaryAddress;
+    	final String primaryFunctionName;
+    	final Symbol primaryFunctionSymbol;
+    	final long secondaryAddress;
+    	final String secondaryFunctionName;
+    	final double similarity;
     	
     	public Entry(boolean i, Address pa, String pfn, Symbol pfs, long sa, String sfn, double sim)
     	{
