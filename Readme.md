@@ -32,9 +32,11 @@ Restart Ghidra to load the new plugin.
 After that to make sure the Plugin is loaded in the Code Explorer, open a file in Ghidra and in the **Code Explorer** go to **File->Configure**
 
 Click the small plug-icon in the top right:
+
 ![Configure Tool](https://i.imgur.com/xVqdY9U.png)
 
 and make sure the checkbox next to BinDiffHelperPlugin is checked.
+
 ![Configure Plugins](https://i.imgur.com/n6yhIpz.png)
 
 ## Usage
@@ -42,7 +44,6 @@ and make sure the checkbox next to BinDiffHelperPlugin is checked.
 Right now, only opening .BinDiff-Files from BinDiff 6 is supported. The corresponding .BinExport-Files need to be in the same Folder.
 
 Open the file you want to import names into in the code Browser, then go to **Window->BinDiffHelper**
-
 ![Open BinDiffHelper](https://i.imgur.com/nl5Jino.png)
 
 Use the *Open from BinDiff* Button or menu item and select your .BinDiff file.
