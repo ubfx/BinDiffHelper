@@ -26,10 +26,14 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.Statement;
+import java.util.ArrayList;
+import java.util.List;
 
 import javax.swing.JComponent;
+import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
+import javax.swing.SwingConstants;
 
 import docking.ActionContext;
 import docking.DockingWindowManager;
@@ -39,6 +43,7 @@ import docking.action.MenuData;
 import docking.action.ToolBarData;
 import docking.widgets.table.GTable;
 import ghidra.app.services.CodeViewerService;
+import ghidra.app.util.exporter.Exporter;
 import ghidra.framework.cmd.Command;
 import ghidra.framework.plugintool.ComponentProviderAdapter;
 import ghidra.program.flatapi.FlatProgramAPI;
@@ -49,6 +54,7 @@ import ghidra.program.model.symbol.Symbol;
 import ghidra.program.util.ProgramLocation;
 import ghidra.util.HTMLUtilities;
 import ghidra.util.Msg;
+import ghidra.util.classfinder.ClassSearcher;
 import resources.ResourceManager;
 
 public class BinDiffHelperProvider extends ComponentProviderAdapter {
@@ -69,8 +75,12 @@ public class BinDiffHelperProvider extends ComponentProviderAdapter {
 	
 	protected CodeViewerService cvs;
 	
+	protected final boolean hasExporter;
+	
 	public BinDiffHelperProvider(BinDiffHelperPlugin plugin, Program program) {
 		super(plugin.getTool(), "BinDiffHelper GUI Provider", plugin.getName());
+		
+		hasExporter = plugin.BinExportExporter != null;
 		
 		this.plugin = plugin;
 		setProgram(program);
@@ -79,6 +89,8 @@ public class BinDiffHelperProvider extends ComponentProviderAdapter {
 		
 		gui = new JPanel(new BorderLayout());
 	
+		generateWarnings();
+		
 		gui.setFocusable(true);
 		gui.setMinimumSize(new Dimension(400, 400));
 		gui.setPreferredSize(new Dimension(1400, 850));
@@ -86,6 +98,41 @@ public class BinDiffHelperProvider extends ComponentProviderAdapter {
 		setDefaultWindowPosition(WindowPosition.WINDOW);
 		
 		createActions();
+	}
+	
+	public void generateWarnings()
+	{
+		if (table != null)
+			return;
+		
+		gui.removeAll();
+		
+		List<String> warnings = new ArrayList<String>();
+		
+		if (!hasExporter) {
+			warnings.add("The BinExport plugin couldn't be found so some features are disabled.<br />" +
+					"See the Readme at https://github.com/ubfx/BinDiffHelper for a link " +
+					"to the BinExport as binaries or in source.");
+		}
+		
+		if (plugin.binDiff6Binary == null) {
+			warnings.add("BinDiff6 binary has not been set so some features are disabled.<br />" +
+					"Go to the settings button and select the BinDiff6 binary if you want to connect with BinDiff6 directly<br />" +
+					"You can download BinDiff 6 from https://zynamics.com/software.html");
+		}
+		
+		if (!warnings.isEmpty()) {
+			String labelContent = "<html>";
+			
+			for (String w : warnings)
+				labelContent += "<p>" + w + "</p><br />";
+			
+			labelContent += "</html>";
+			JLabel warningLabel = new JLabel(labelContent, SwingConstants.CENTER);
+			gui.add(warningLabel, BorderLayout.CENTER);
+		}
+		
+		refresh();
 	}
 	
 	public void refresh()
@@ -98,8 +145,12 @@ public class BinDiffHelperProvider extends ComponentProviderAdapter {
 	{
 		OpenFromBDFileAction odb = new OpenFromBDFileAction(plugin);
 		OpenFromProjectAction op = new OpenFromProjectAction(plugin);
+		SettingsDialogAction sa = new SettingsDialogAction(plugin);
+		//OpenBinDiffGuiAction obd = new OpenBinDiffGuiAction(plugin);
 		
-		op.setEnabled(false);
+		//op.setEnabled(false);
+		addLocalAction(sa);
+		
 		fna = new ImportFunctionNamesAction(plugin);
 		fna.setEnabled(false);
 		
@@ -306,8 +357,7 @@ public class BinDiffHelperProvider extends ComponentProviderAdapter {
 			fna.setEntries(ctm.getEntries());
 			fna.setEnabled(true);
 			
-			gui.revalidate();
-			gui.repaint();
+			refresh();
 		} catch (Exception e) {
 			Msg.showError(this, this.getComponent(), "Error: ", e.toString());
 			return;
@@ -323,7 +373,7 @@ public class BinDiffHelperProvider extends ComponentProviderAdapter {
 			
 			this.setMenuBarData(new MenuData(new String[] { "Open", "From BinDiffFile" }, "Open"));
 			
-			setToolBarData(new ToolBarData(ResourceManager.loadImage("images/open_db.png"), ""));
+			setToolBarData(new ToolBarData(ResourceManager.loadImage("images/open_db.png"), "Open"));
 
 			setDescription(HTMLUtilities.toHTML("Open from BinDiff output file"));
 			
@@ -340,19 +390,20 @@ public class BinDiffHelperProvider extends ComponentProviderAdapter {
 
 		@Override
 		public void importDialogFileSelected(String filename) {
-			openBinDiffDB(filename);
+			if (!filename.isEmpty())
+				openBinDiffDB(filename);
 		}
 		
 	}
 	
-	public class OpenFromProjectAction extends DockingAction implements OpenDialog.Caller {
+	public class OpenFromProjectAction extends DockingAction {
 
 		public OpenFromProjectAction(BinDiffHelperPlugin plugin) {
 			super("Open from Project", plugin.getName());
 			
 			this.setMenuBarData(new MenuData(new String[] { "Open", "From Project" }, "Open"));
 			
-			setToolBarData(new ToolBarData(ResourceManager.loadImage("images/open_from_project.png"), ""));
+			setToolBarData(new ToolBarData(ResourceManager.loadImage("images/open_from_project.png"), "Open"));
 
 			setDescription(HTMLUtilities.toHTML("Open from Project"));
 			
@@ -361,14 +412,38 @@ public class BinDiffHelperProvider extends ComponentProviderAdapter {
 		@Override
 		public void actionPerformed(ActionContext context) {
 			// TODO Auto-generated method stub
+			DockingWindowManager.showDialog(new OpenFromProjectDialog());
+		}		
+	}
+	
+	public class SettingsDialogAction extends DockingAction implements OpenDialog.Caller {
+
+		private BinDiffHelperPlugin plugin;
+		
+		public SettingsDialogAction(BinDiffHelperPlugin plugin) {
+			super("Settings", plugin.getName());
+		
+			this.plugin = plugin;
+			
+			this.setMenuBarData(new MenuData(new String[] { "Settings" }, "Settings"));
+			
+			setToolBarData(new ToolBarData(ResourceManager.loadImage("images/setting_tools.png"), "Settings"));
+
+			setDescription(HTMLUtilities.toHTML("Settings"));
 			
 		}
 
 		@Override
-		public void importDialogFileSelected(String filename) {
+		public void actionPerformed(ActionContext context) {
 			// TODO Auto-generated method stub
-			
+			DockingWindowManager.showDialog(new SettingsDialog(plugin));
 		}
-		
+
+		@Override
+		public void importDialogFileSelected(String filename) {
+			if (!filename.isEmpty())
+				plugin.updateBinDiff6Binary();
+			generateWarnings();
+		}		
 	}
 }

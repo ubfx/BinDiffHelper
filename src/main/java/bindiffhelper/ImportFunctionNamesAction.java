@@ -31,7 +31,7 @@ public class ImportFunctionNamesAction extends DockingAction {
 		
 		this.setMenuBarData(new MenuData(new String[] { "Import", "Selected function names" }, "Import"));
 		
-		setToolBarData(new ToolBarData(ResourceManager.loadImage("images/table_go.png"), ""));
+		setToolBarData(new ToolBarData(ResourceManager.loadImage("images/table_go.png"), "Import"));
 
 		setDescription(HTMLUtilities.toHTML("Import selected function names"));
 		
