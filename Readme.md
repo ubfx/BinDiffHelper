@@ -2,6 +2,16 @@
 
 Ghidra extension that helps importing function names from BinDiffs (BinDiff 6 supported).
 
+## What it can
+
+### Right now
+* Open a BinDiff file, created with BinDiff 6, from two .BinExport files and import the matching function names in ghidra
+
+### Soon
+* Compare the binary opened in Ghidra with another binary from the same Ghidra project, show results and import function names
+* Compare the binary opened in Ghidra with an external binary, show results, and import the matching function names
+* Automatically export two .BinExport files from a Ghidra project(using the BinExport plugin), call BinDiff on them and show the BinDiff GUI
+
 ## How to Build
 Requirements:
 
