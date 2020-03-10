@@ -75,7 +75,7 @@ public class BinDiffHelperProvider extends ComponentProviderAdapter {
 		this.plugin = plugin;
 		setProgram(program);
 		
-		setIcon(ResourceManager.loadImage("images/bdh.png"));
+		setIcon(ResourceManager.loadImage("images/BDH.png"));
 		
 		gui = new JPanel(new BorderLayout());
 	
@@ -99,6 +99,7 @@ public class BinDiffHelperProvider extends ComponentProviderAdapter {
 		OpenFromBDFileAction odb = new OpenFromBDFileAction(plugin);
 		OpenFromProjectAction op = new OpenFromProjectAction(plugin);
 		
+		op.setEnabled(false);
 		fna = new ImportFunctionNamesAction(plugin);
 		fna.setEnabled(false);
 		
@@ -275,7 +276,7 @@ public class BinDiffHelperProvider extends ComponentProviderAdapter {
 			}
 			stmt.close();
 			
-			Msg.showInfo(this, this.getComponent(), "Success", "Opened success");
+			Msg.showInfo(this, this.getComponent(), "Success", "Opened successfully");
 			
 			boolean createTable = table == null;
 			
@@ -329,12 +330,7 @@ public class BinDiffHelperProvider extends ComponentProviderAdapter {
 			this.plugin = plugin;
 			
 		}
-		
-		@Override
-		public boolean isEnabledForContext(ActionContext actionContext) {
-			return true;
-		}
-
+	
 		@Override
 		public void actionPerformed(ActionContext context) {
 			OpenDialog d = new OpenDialog(this, "Open BinDiff 6 file", "de.ubfx.bindiffhelper.bindiffinputfile",
@@ -360,11 +356,6 @@ public class BinDiffHelperProvider extends ComponentProviderAdapter {
 
 			setDescription(HTMLUtilities.toHTML("Open from Project"));
 			
-		}
-
-		@Override
-		public boolean isEnabledForContext(ActionContext actionContext) {
-			return true;
 		}
 
 		@Override
