@@ -2,7 +2,7 @@
 
 Ghidra extension that helps importing function names from BinDiffs (BinDiff 6 supported).
 
-## What it can
+## What it does
 
 ### Right now
 * Open a BinDiff file, created with BinDiff 6, from two .BinExport files and import the matching function names in ghidra
