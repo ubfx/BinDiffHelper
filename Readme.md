@@ -9,6 +9,9 @@ Requirements:
 * some jdk (if you built ghidra yourself, it needs to be the same jdk)
 * gradle (tested with 5.0 and 6.2.2)
 
+Recommended:
+* BinExport plugin [Binaries](https://github.com/google/binexport/releases) or compiled from [source](https://github.com/google/binexport/tree/master/java/BinExport) for your specific ghidra version
+
 ### Build it
 You need to set the **GHIDRA_INSTALLATION_DIR** environment variable to the ghidra installation dir.
 If you have different JDKs installed, make sure the environment variable **JAVA_HOME** points to the one your ghidra installation uses.
@@ -57,6 +60,6 @@ Select all the function names you want to import and click the **Import function
 
 ## References
 * https://www.zynamics.com/bindiff/manual/
-* https://github.com/google/binexport/tree/v11/java/BinExport
+* https://github.com/google/binexport/
 
 Icons from: [Fatcow free icons](https://www.fatcow.com/free-icons)
