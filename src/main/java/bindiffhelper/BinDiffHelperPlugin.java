@@ -89,15 +89,14 @@ public class BinDiffHelperPlugin extends ProgramPlugin {
 		} catch (ClassNotFoundException e) {
 		}
 		
-		provider = new BinDiffHelperProvider(this, this.getCurrentProgram());
-		provider.setTitle("BinDiffHelper");
-		
 		try {
 			updateBinDiff6Binary();
 		} catch (Exception e) {
 			
 		}
-		provider.settingsUpdated();
+		
+		provider = new BinDiffHelperProvider(this, this.getCurrentProgram());
+		provider.setTitle("BinDiffHelper");
 		
 		provider.addToTool();
 	}
