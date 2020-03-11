@@ -29,18 +29,14 @@ import ghidra.app.plugin.PluginCategoryNames;
 import ghidra.app.plugin.ProgramPlugin;
 import ghidra.app.services.CodeViewerService;
 import ghidra.app.util.exporter.Exporter;
-import ghidra.app.util.exporter.ExporterException;
 import ghidra.framework.model.DomainFile;
 import ghidra.framework.plugintool.PluginInfo;
 import ghidra.framework.plugintool.PluginTool;
 import ghidra.framework.plugintool.util.PluginStatus;
 import ghidra.framework.preferences.Preferences;
-import ghidra.program.database.ProgramDB;
 import ghidra.program.model.listing.Program;
 import ghidra.util.Msg;
 import ghidra.util.classfinder.ClassSearcher;
-import ghidra.util.exception.CancelledException;
-import ghidra.util.exception.VersionException;
 import ghidra.util.task.TaskDialog;
 import ghidra.util.task.TaskMonitor;
 
@@ -160,9 +156,24 @@ public class BinDiffHelperPlugin extends ProgramPlugin {
 		
 		String[] cmd = {binDiff6Binary, pri.getName(), sec.getName()};
 		String[] env = {};
+		
+		Msg.debug(this, "bd6: " + binDiff6Binary + "\nfiles:" + pri.getAbsolutePath() + "," + sec.getAbsolutePath());
+		Msg.debug(this, "printing BD6 output");
 		try {
 			var p = Runtime.getRuntime().exec(cmd, env, pri.getParentFile());
 			p.waitFor();
+			var i = new BufferedReader(new InputStreamReader(p.getInputStream()));
+			while (true)
+			{
+				String line = i.readLine();
+				
+				if (line == null)
+					break;
+				
+				Msg.debug(this, ">" + line);
+			}
+			Msg.debug(this, "end of output");
+			
 		} catch (IOException | InterruptedException e) {
 			Msg.showError(this, d.getComponent(), "Error", "Error when Exporting");
 			d.close();
@@ -177,6 +188,8 @@ public class BinDiffHelperPlugin extends ProgramPlugin {
 				"_vs_" +
 				sec.getName().replace(".BinExport", "")
 				+ ".BinDiff");
+		
+		Msg.debug(this, "looking for bindiff at " + bindiff.toFile().getAbsolutePath());
 		
 		if (!bindiff.toFile().exists()) {
 			ret = null;
