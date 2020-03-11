@@ -90,11 +90,10 @@ public class BinDiffHelperProvider extends ComponentProviderAdapter {
 	
 		generateWarnings();
 		
+		setDefaultWindowPosition(WindowPosition.WINDOW);
 		gui.setFocusable(true);
 		gui.setMinimumSize(new Dimension(400, 400));
-		gui.setPreferredSize(new Dimension(1400, 850));
-		
-		setDefaultWindowPosition(WindowPosition.WINDOW);
+		gui.setPreferredSize(new Dimension(1200, 425));
 		
 		createActions();
 	}

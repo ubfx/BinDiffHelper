@@ -1,6 +1,7 @@
 package bindiffhelper;
 
 import java.awt.BorderLayout;
+import java.awt.Dimension;
 
 import javax.swing.BorderFactory;
 import javax.swing.JButton;
@@ -31,6 +32,9 @@ public class OpenFromProjectDialog extends DialogComponentProvider {
 		
 		tp.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
 		panel.add(tp, BorderLayout.CENTER);
+		
+		panel.setMinimumSize(new Dimension(400, 500));
+		panel.setPreferredSize(new Dimension(400, 500));
 		
 		addWorkPanel(panel);
 
