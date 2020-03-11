@@ -154,13 +154,15 @@ public class BinDiffHelperPlugin extends ProgramPlugin {
 		
 		d.setMessage("Executing BinDiff 6");
 		
-		String[] cmd = {binDiff6Binary, pri.getName(), sec.getName()};
-		String[] env = {};
+		String outputDir = pri.getParentFile().getAbsolutePath();
 		
-		Msg.debug(this, "bd6: " + binDiff6Binary + "\nfiles:" + pri.getAbsolutePath() + "," + sec.getAbsolutePath());
+		String[] cmd = {binDiff6Binary, pri.getAbsolutePath(), sec.getAbsolutePath(), "--output_dir", outputDir};
+		
+		Msg.debug(this, "bd6: " + binDiff6Binary + "\nfiles:" + pri.getAbsolutePath() + "," + sec.getAbsolutePath() + "\n"+
+				"output dir: " + outputDir);
 		Msg.debug(this, "printing BD6 output");
 		try {
-			var p = Runtime.getRuntime().exec(cmd, env, pri.getParentFile());
+			var p = Runtime.getRuntime().exec(cmd);
 			p.waitFor();
 			var i = new BufferedReader(new InputStreamReader(p.getInputStream()));
 			while (true)
@@ -183,7 +185,7 @@ public class BinDiffHelperPlugin extends ProgramPlugin {
 		d.incrementProgress(1);
 		d.setMessage("Looking for generated file");
 		
-		Path bindiff = FileSystems.getDefault().getPath(pri.getParentFile().getAbsolutePath(),
+		Path bindiff = FileSystems.getDefault().getPath(outputDir,
 				pri.getName().replace(".BinExport", "") + 
 				"_vs_" +
 				sec.getName().replace(".BinExport", "")
