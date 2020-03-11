@@ -45,7 +45,7 @@ import ghidra.util.task.TaskMonitor;
  */
 //@formatter:off
 @PluginInfo(
-	status = PluginStatus.UNSTABLE,
+	status = PluginStatus.STABLE,
 	packageName = ExamplesPluginPackage.NAME,
 	category = PluginCategoryNames.ANALYSIS,
 	shortDescription = "This plugin helps importing function names using BinDiff 6",
