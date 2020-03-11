@@ -1,34 +1,26 @@
 package bindiffhelper;
 
 import java.awt.BorderLayout;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
 
 import javax.swing.BorderFactory;
 import javax.swing.JButton;
 import javax.swing.JPanel;
 
 import docking.DialogComponentProvider;
-import ghidra.app.util.exporter.Exporter;
 import ghidra.framework.main.AppInfo;
 import ghidra.framework.main.datatree.ProjectDataTreePanel;
-import ghidra.framework.model.DomainObject;
-import ghidra.program.database.ProgramDB;
-import ghidra.program.model.listing.Program;
 import ghidra.util.Msg;
-import ghidra.util.classfinder.ClassSearcher;
-import ghidra.util.exception.CancelledException;
-import ghidra.util.exception.VersionException;
-import ghidra.util.task.TaskMonitor;
 
 public class OpenFromProjectDialog extends DialogComponentProvider {
 	
-	ProjectDataTreePanel tp;
+	private ProjectDataTreePanel tp;
+	private BinDiffHelperPlugin plugin;
 	
-	public OpenFromProjectDialog()
+	public OpenFromProjectDialog(BinDiffHelperPlugin plugin)
 	{
 		super("Open File");
+	
+		this.plugin = plugin;
 		
 		JPanel panel = new JPanel(new BorderLayout());
 		panel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
@@ -75,19 +67,10 @@ public class OpenFromProjectDialog extends DialogComponentProvider {
 			return;
 		}
 		
+		close();
 		
-		try {			
-			var dof = df.getDomainObject(this, true, false, TaskMonitor.DUMMY);
-			
-			if (dof instanceof ProgramDB)
-			{
-				System.out.println("ProgramDB");
-			}
-			
-		} catch (VersionException | CancelledException | IOException e) {
-			
-			e.printStackTrace();
-		}
+		var files = plugin.callBinDiff(df);
 		
+		plugin.provider.openBinDiffDB(files[2].getAbsolutePath(), files[0], files[1]);
 	}
 }

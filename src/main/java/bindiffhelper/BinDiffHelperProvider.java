@@ -20,6 +20,7 @@ import java.awt.Dimension;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.io.File;
+import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.sql.Connection;
@@ -43,10 +44,9 @@ import docking.action.MenuData;
 import docking.action.ToolBarData;
 import docking.widgets.table.GTable;
 import ghidra.app.services.CodeViewerService;
-import ghidra.app.util.exporter.Exporter;
 import ghidra.framework.cmd.Command;
+import ghidra.framework.model.DomainFile;
 import ghidra.framework.plugintool.ComponentProviderAdapter;
-import ghidra.program.flatapi.FlatProgramAPI;
 import ghidra.program.model.address.Address;
 import ghidra.program.model.address.AddressSpace;
 import ghidra.program.model.listing.Program;
@@ -54,7 +54,6 @@ import ghidra.program.model.symbol.Symbol;
 import ghidra.program.util.ProgramLocation;
 import ghidra.util.HTMLUtilities;
 import ghidra.util.Msg;
-import ghidra.util.classfinder.ClassSearcher;
 import resources.ResourceManager;
 
 public class BinDiffHelperProvider extends ComponentProviderAdapter {
@@ -71,7 +70,7 @@ public class BinDiffHelperProvider extends ComponentProviderAdapter {
 	protected Program program;
 	
 	protected ImportFunctionNamesAction fna;
-	protected FlatProgramAPI api;
+	protected OpenFromProjectAction op;
 	
 	protected CodeViewerService cvs;
 	
@@ -80,10 +79,11 @@ public class BinDiffHelperProvider extends ComponentProviderAdapter {
 	public BinDiffHelperProvider(BinDiffHelperPlugin plugin, Program program) {
 		super(plugin.getTool(), "BinDiffHelper GUI Provider", plugin.getName());
 		
-		hasExporter = plugin.BinExportExporter != null;
+		hasExporter = plugin.binExportExporter != null;
 		
 		this.plugin = plugin;
 		setProgram(program);
+		
 		
 		setIcon(ResourceManager.loadImage("images/BDH.png"));
 		
@@ -141,14 +141,21 @@ public class BinDiffHelperProvider extends ComponentProviderAdapter {
 		gui.repaint();
 	}
 	
+	
+	public void settingsUpdated()
+	{
+		op.setEnabled(hasExporter && plugin.binDiff6Binary != null);
+	}
+	
 	private void createActions()
 	{
 		OpenFromBDFileAction odb = new OpenFromBDFileAction(plugin);
-		OpenFromProjectAction op = new OpenFromProjectAction(plugin);
+		op = new OpenFromProjectAction(plugin);
 		SettingsDialogAction sa = new SettingsDialogAction(plugin);
 		//OpenBinDiffGuiAction obd = new OpenBinDiffGuiAction(plugin);
 		
-		//op.setEnabled(false);
+		settingsUpdated();
+		
 		addLocalAction(sa);
 		
 		fna = new ImportFunctionNamesAction(plugin);
@@ -182,7 +189,6 @@ public class BinDiffHelperProvider extends ComponentProviderAdapter {
 	{
 		program = p;
 		if (p != null) {
-			api = new FlatProgramAPI(program);
 			cvs = plugin.getTool().getService(CodeViewerService.class);
 		}
 	}
@@ -223,7 +229,12 @@ public class BinDiffHelperProvider extends ComponentProviderAdapter {
 		return ret;
 	}
 	
-	protected void openBinDiffDB(String filename) {
+	protected void openBinDiffDB(String filename)
+	{
+		openBinDiffDB(filename, null, null);
+	}
+	
+	protected void openBinDiffDB(String filename, File be0, File be1) {
 		
 		if (program == null)
 		{
@@ -237,6 +248,8 @@ public class BinDiffHelperProvider extends ComponentProviderAdapter {
 		
 		String pname = program.getName().toString();
 		
+		BinExport2File[] bi = new BinExport2File[2];
+		int loadedProgramIndex = -1;
 		
 		try {
 			conn = DriverManager.getConnection("jdbc:sqlite:" + filename);
@@ -247,38 +260,46 @@ public class BinDiffHelperProvider extends ComponentProviderAdapter {
 				return;
 			}
 			
-			String[][] filenames = getBinDiffFilenames(conn);
-			Path bindiff = Paths.get(filename);
-			int loadedProgramIndex = -1;
-			
-			BinExport2File[] bi = new BinExport2File[2];
-			for (int i = 0; i < 2; i++)
+			if (be0 == null || be1 == null)
 			{
-				File binExportFile = bindiff.resolveSibling(filenames[i][0] + ".BinExport").toFile();
+				String[][] filenames = getBinDiffFilenames(conn);
+				Path bindiff = Paths.get(filename);
 				
-				if (!binExportFile.exists())
+				for (int i = 0; i < 2; i++)
 				{
-					Msg.showError(this, getComponent(), "Error", "Could not open " + binExportFile.getAbsolutePath());
+					File binExportFile = bindiff.resolveSibling(filenames[i][0] + ".BinExport").toFile();
+					
+					if (!binExportFile.exists())
+					{
+						Msg.showError(this, getComponent(), "Error", "Could not open " + binExportFile.getAbsolutePath());
+						return;
+					}
+					
+					if (pname.equals(filenames[i][1]))
+					{
+						loadedProgramIndex = i;
+					
+						bi[0] = new BinExport2File(binExportFile);
+					}
+					else
+						bi[1] = new BinExport2File(binExportFile);
+				}
+				
+				if (loadedProgramIndex == -1)
+				{
+					Msg.showError(this, getComponent(), "Error",
+							"Could not find loaded Program in BinDiff files\n" + pname + "\nin\n" +
+							filenames[0][0] + "\n" + filenames[0][0]);
+					
 					return;
 				}
-				
-				if (pname.equals(filenames[i][1]))
-				{
-					loadedProgramIndex = i;
-				
-					bi[0] = new BinExport2File(binExportFile);
-				}
-				else
-					bi[1] = new BinExport2File(binExportFile);
 			}
-			
-			if (loadedProgramIndex == -1)
+			else
 			{
-				Msg.showError(this, getComponent(), "Error",
-						"Could not find loaded Program in BinDiff files\n" + pname + "\nin\n" +
-						filenames[0][0] + "\n" + filenames[0][0]);
+				bi[0] = new BinExport2File(be0);
+				bi[1] = new BinExport2File(be1);
 				
-				return;
+				loadedProgramIndex = 0;
 			}
 			
 			Statement stmt = conn.createStatement();
@@ -300,18 +321,23 @@ public class BinDiffHelperProvider extends ComponentProviderAdapter {
 			
 			
 			ctm = new ComparisonTableModel();
+			var st = program.getSymbolTable();
 			
 			while (rs.next())
 			{
+
 				Address priAddress = addrSpace.getAddress(rs.getLong(priAddressCol));
 				long secAddress = rs.getLong(secAddressCol);
 
-				double similarity = rs.getDouble("similarity");
+				Symbol s = null;
 				
-				Symbol s = api.getSymbolAt(priAddress);
+				if (st.hasSymbol(priAddress))
+					s = st.getSymbols(priAddress)[0];
 				
 				String priFn = bi[0].getFunctionName(priAddress);
 				String secFn = bi[1].getFunctionName(secAddress);
+				
+				double similarity = rs.getDouble("similarity");
 				
 				boolean defaultTicked = similarity == 1.0f && !secFn.startsWith("thunk_FUN_") && !secFn.startsWith("FUN_") && !priFn.equals(secFn);
 				ctm.addEntry(
@@ -342,6 +368,7 @@ public class BinDiffHelperProvider extends ComponentProviderAdapter {
 			table.setModel(ctm);
 			
 			table.getColumn("Import").setMaxWidth(50);
+			table.getColumn("Similarity").setMaxWidth(100);
 			table.setAutoResizeMode(GTable.AUTO_RESIZE_ALL_COLUMNS);
 			
 			table.addMouseListener(new MouseAdapter() {
@@ -364,6 +391,8 @@ public class BinDiffHelperProvider extends ComponentProviderAdapter {
 		}		
 	}
 	
+	public DomainFile df;
+	
 	public class OpenFromBDFileAction extends DockingAction implements OpenDialog.Caller {
 
 		BinDiffHelperPlugin plugin;
@@ -382,7 +411,7 @@ public class BinDiffHelperProvider extends ComponentProviderAdapter {
 		}
 	
 		@Override
-		public void actionPerformed(ActionContext context) {
+		public void actionPerformed(ActionContext context) {		
 			OpenDialog d = new OpenDialog(this, "Open BinDiff 6 file", "de.ubfx.bindiffhelper.bindiffinputfile",
 					"Select the File created with BinDiff 6 (usually ends in .BinDiff)");
 			DockingWindowManager.showDialog(d, plugin.provider.getComponent());
@@ -411,12 +440,11 @@ public class BinDiffHelperProvider extends ComponentProviderAdapter {
 
 		@Override
 		public void actionPerformed(ActionContext context) {
-			// TODO Auto-generated method stub
-			DockingWindowManager.showDialog(new OpenFromProjectDialog());
+			DockingWindowManager.showDialog(new OpenFromProjectDialog(plugin));
 		}		
 	}
 	
-	public class SettingsDialogAction extends DockingAction implements OpenDialog.Caller {
+	public class SettingsDialogAction extends DockingAction {
 
 		private BinDiffHelperPlugin plugin;
 		
@@ -435,15 +463,7 @@ public class BinDiffHelperProvider extends ComponentProviderAdapter {
 
 		@Override
 		public void actionPerformed(ActionContext context) {
-			// TODO Auto-generated method stub
 			DockingWindowManager.showDialog(new SettingsDialog(plugin));
-		}
-
-		@Override
-		public void importDialogFileSelected(String filename) {
-			if (!filename.isEmpty())
-				plugin.updateBinDiff6Binary();
-			generateWarnings();
-		}		
+		}	
 	}
 }

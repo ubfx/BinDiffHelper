@@ -1,6 +1,7 @@
 package bindiffhelper;
 
 import java.awt.BorderLayout;
+import java.io.IOException;
 
 import javax.swing.BorderFactory;
 import javax.swing.JButton;
@@ -9,6 +10,7 @@ import javax.swing.JPanel;
 
 import docking.DialogComponentProvider;
 import docking.widgets.filechooser.GhidraFileChooserPanel;
+import ghidra.util.Msg;
 
 public class SettingsDialog extends DialogComponentProvider {
 
@@ -49,7 +51,12 @@ public class SettingsDialog extends DialogComponentProvider {
 	protected void okCallback() {		
 		close();
 		
-		plugin.updateBinDiff6Binary();
+		try {
+			plugin.updateBinDiff6Binary();
+		} catch (IOException e) {
+			Msg.showError(this, getComponent(), "Error", e.toString());
+		}
+		plugin.provider.settingsUpdated();
 		plugin.provider.generateWarnings();
 	}
 }

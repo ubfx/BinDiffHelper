@@ -56,9 +56,11 @@ public class ComparisonTableModel extends AbstractTableModel {
     	case 1:
     		return "0x" + Long.toHexString(e.primaryAddress.getUnsignedOffset());
     	case 2:
-    		return e.primaryFunctionSymbol.getName();
+    		if (e.primaryFunctionSymbol != null)
+    			return e.primaryFunctionSymbol.getName();
+    		return "No Symbol";
     	case 3:
-    		return e.primaryFunctionName;
+    		return e.primaryFunctionNameDb;
     	case 4:
     		return "0x" + Long.toHexString(e.secondaryAddress);
     	case 5:
@@ -106,7 +108,7 @@ public class ComparisonTableModel extends AbstractTableModel {
     public static class Entry {
     	boolean do_import;
     	final Address primaryAddress;
-    	final String primaryFunctionName;
+    	final String primaryFunctionNameDb;
     	final Symbol primaryFunctionSymbol;
     	final long secondaryAddress;
     	final String secondaryFunctionName;
@@ -117,7 +119,7 @@ public class ComparisonTableModel extends AbstractTableModel {
     	{
     		do_import = i;
     		primaryAddress = pa;
-    		primaryFunctionName = pfn;
+    		primaryFunctionNameDb = pfn;
     		primaryFunctionSymbol = pfs;
     		secondaryAddress = sa;
     		secondaryFunctionName = sfn;
@@ -127,7 +129,10 @@ public class ComparisonTableModel extends AbstractTableModel {
     	
     	public boolean symbolRenamed()
     	{
-    		return !primaryFunctionName.equals(primaryFunctionSymbol.getName());
+    		if (primaryFunctionSymbol == null)
+    			return true;
+    		
+    		return !primaryFunctionNameDb.equals(primaryFunctionSymbol.getName());
     	}
     }
 }

@@ -19,6 +19,8 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.nio.file.FileSystems;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -27,13 +29,20 @@ import ghidra.app.plugin.PluginCategoryNames;
 import ghidra.app.plugin.ProgramPlugin;
 import ghidra.app.services.CodeViewerService;
 import ghidra.app.util.exporter.Exporter;
+import ghidra.app.util.exporter.ExporterException;
+import ghidra.framework.model.DomainFile;
 import ghidra.framework.plugintool.PluginInfo;
 import ghidra.framework.plugintool.PluginTool;
 import ghidra.framework.plugintool.util.PluginStatus;
 import ghidra.framework.preferences.Preferences;
+import ghidra.program.database.ProgramDB;
 import ghidra.program.model.listing.Program;
 import ghidra.util.Msg;
 import ghidra.util.classfinder.ClassSearcher;
+import ghidra.util.exception.CancelledException;
+import ghidra.util.exception.VersionException;
+import ghidra.util.task.TaskDialog;
+import ghidra.util.task.TaskMonitor;
 
 /**
  * TODO: Provide class-level documentation that describes what this plugin does.
@@ -51,8 +60,10 @@ import ghidra.util.classfinder.ClassSearcher;
 public class BinDiffHelperPlugin extends ProgramPlugin {
 
 	BinDiffHelperProvider provider;
-	Exporter BinExportExporter;
+	Exporter binExportExporter;
 	String binDiff6Binary;
+	
+	Program program;
 	
 	public final static String BD6BINPROPERTY = "de.ubfx.bindiffhelper.bindiff6binary";
 	/**
@@ -63,9 +74,7 @@ public class BinDiffHelperPlugin extends ProgramPlugin {
 	public BinDiffHelperPlugin(PluginTool tool) {
 		super(tool, true, true);
 
-		Preferences.removeProperty(BD6BINPROPERTY);
-		BinExportExporter = null;
-		binDiff6Binary = Preferences.getProperty(BD6BINPROPERTY);
+		binExportExporter = null;
 		
 		try {
 			Class<?> binExportExporterClass = Class.forName("com.google.security.binexport.BinExportExporter");
@@ -76,20 +85,117 @@ public class BinDiffHelperPlugin extends ProgramPlugin {
 			{
 				if (e.getClass() == binExportExporterClass)
 				{
-					BinExportExporter = e;
+					binExportExporter = e;
 					break;
 				}
 			}
 			
 		} catch (ClassNotFoundException e) {
 		}
-
+		
 		provider = new BinDiffHelperProvider(this, this.getCurrentProgram());
 		provider.setTitle("BinDiffHelper");
+		
+		try {
+			updateBinDiff6Binary();
+		} catch (Exception e) {
+			
+		}
+		provider.settingsUpdated();
+		
 		provider.addToTool();
 	}
-
-	public boolean updateBinDiff6Binary()
+	
+	File binExportDomainFile(DomainFile df)
+	{
+		File out = null;
+		
+		try {			
+			var dof = df.getImmutableDomainObject(this, DomainFile.DEFAULT_VERSION, TaskMonitor.DUMMY);
+			
+			if (dof instanceof Program)
+			{
+				out = File.createTempFile(df.getName(), ".BinExport");
+				
+				if (binExportExporter.export(out, dof, null, TaskMonitor.DUMMY) == false)
+				{
+					out.delete();
+					out = null;
+				}
+			}
+			
+			
+			dof.release(this);
+			
+			
+		} catch (Exception e) {
+			out = null;
+		}
+		
+		return out;
+	}
+	
+	public File[] callBinDiff(DomainFile df)
+	{
+		if (binDiff6Binary == null) {
+			
+			Msg.showError(this, null, "Error", "Unexpected error, no binDiffBinary found");
+			return null;
+		}
+		
+		File[] ret = null;
+		
+		TaskDialog d = new TaskDialog("Exporting", false, false, true);
+		tool.showDialog(d);
+		d.setMaximum(5);
+		d.setMessage("Exporting primary file");
+		final var sec = binExportDomainFile(df);
+		d.incrementProgress(1);
+		
+		d.setMessage("Exporting secondary file");
+		final var pri = binExportDomainFile(program.getDomainFile());
+		d.incrementProgress(1);
+		
+		d.setMessage("Executing BinDiff 6");
+		
+		String[] cmd = {binDiff6Binary, pri.getName(), sec.getName()};
+		String[] env = {};
+		try {
+			var p = Runtime.getRuntime().exec(cmd, env, pri.getParentFile());
+			p.waitFor();
+		} catch (IOException | InterruptedException e) {
+			Msg.showError(this, d.getComponent(), "Error", "Error when Exporting");
+			d.close();
+			return null;
+		}
+		
+		d.incrementProgress(1);
+		d.setMessage("Looking for generated file");
+		
+		Path bindiff = FileSystems.getDefault().getPath(pri.getParentFile().getAbsolutePath(),
+				pri.getName().replace(".BinExport", "") + 
+				"_vs_" +
+				sec.getName().replace(".BinExport", "")
+				+ ".BinDiff");
+		
+		if (!bindiff.toFile().exists()) {
+			ret = null;
+			
+			Msg.showError(this, d.getComponent(), "Error", "Error when trying to find generated BinDiff file");
+		}
+		else
+		{
+			ret = new File[] {pri, sec, bindiff.toFile()};
+		}
+		
+		d.incrementProgress(1);
+		d.close();
+		
+		
+		return ret;
+	}
+	
+	public boolean updateBinDiff6Binary() throws IOException
 	{
 		String bin = Preferences.getProperty(BD6BINPROPERTY);
 		binDiff6Binary = null;
@@ -101,8 +207,7 @@ public class BinDiffHelperPlugin extends ProgramPlugin {
 		File f = new File(bin);
 		if (!f.exists() || !f.canExecute())
 		{
-			Msg.showError(this, provider.getComponent(), "Error", "File does not exist or is not executable");
-			return false;
+			throw new IOException("File does not exist or is not executable");
 		}
 		
 		String[] cmd = {bin, ""};
@@ -115,19 +220,16 @@ public class BinDiffHelperPlugin extends ProgramPlugin {
 			
 			if (!outp.startsWith("BinDiff 6"))
 			{
-				Msg.showError(this, provider.getComponent(), "Error", "This does not seem to be a BinDiff 6 binary");
+				throw new IOException("This does not seem to be a BinDiff 6 binary");
 			}
 			
 			
 		} catch (Exception e) {
-			Msg.showError(this, provider.getComponent(), "Error", "Couldn't run this file. Doesn't seem to be the correct BinDiff 6 binary");
-			return false;
-			
+			throw new IOException("Couldn't run this file. Doesn't seem to be the correct BinDiff 6 binary");			
 		}
 		
-		Msg.showInfo(this, provider.getComponent(), "Success", "Successfully linked BinDiff 6 executable");
-		
 		binDiff6Binary = bin;
+		
 		return true;		
 	}
 	
@@ -141,6 +243,7 @@ public class BinDiffHelperPlugin extends ProgramPlugin {
 	@Override
 	protected void programActivated(Program p)
 	{
+		program = p;
 		provider.setProgram(p);
 	}
 	

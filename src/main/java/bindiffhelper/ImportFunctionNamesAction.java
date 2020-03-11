@@ -8,19 +8,13 @@ import docking.ActionContext;
 import docking.action.DockingAction;
 import docking.action.MenuData;
 import docking.action.ToolBarData;
-import ghidra.framework.cmd.Command;
-import ghidra.framework.model.DomainObject;
-import ghidra.program.flatapi.FlatProgramAPI;
 import ghidra.program.model.symbol.SourceType;
-import ghidra.program.model.symbol.Symbol;
 import ghidra.util.HTMLUtilities;
-import ghidra.util.exception.DuplicateNameException;
-import ghidra.util.exception.InvalidInputException;
+import ghidra.util.Msg;
 import resources.ResourceManager;
 
 public class ImportFunctionNamesAction extends DockingAction {
-
-	protected FlatProgramAPI api;
+	
 	protected BinDiffHelperPlugin plugin;
 	
 	List<ComparisonTableModel.Entry> entries;
@@ -44,56 +38,50 @@ public class ImportFunctionNamesAction extends DockingAction {
 	
 	@Override
 	public void actionPerformed(ActionContext arg0) {
+		int trans = plugin.program.startTransaction("Rename functions");
 		
-		var map = new HashMap<Symbol, String>();
+		Map<String, Exception> changes = new HashMap<String, Exception>();
 		
 		for (var e : entries) {
 			if (!e.do_import)
 				continue;
 			
-			map.put(e.primaryFunctionSymbol, e.secondaryFunctionName);
+			Exception exp = null;
+			String transformation = e.primaryFunctionSymbol.getName() + " -> " + e.secondaryFunctionName;
+			try {
+				e.primaryFunctionSymbol.setName(e.secondaryFunctionName, SourceType.IMPORTED);
+				e.do_import = false;
+			} catch (Exception ex) {
+				exp = ex;
+			}
+			
+			changes.put(transformation, exp);
 		}
 
-		plugin.provider.execute(new RenameCmd(map));
+		plugin.program.endTransaction(trans, true);
+
+		String html = "<html><ul>";
+		
+		for (var c: changes.entrySet())
+		{
+			boolean wasSuccess = c.getValue() == null;
+			
+			String color = wasSuccess ? "green" : "red";
+			
+			html += "<li><font color='" + color + "'>" + c.getKey();
+			
+			if (!wasSuccess)
+			{
+				html += " unsuccessful (Exception: " + c.getValue().toString() + ")";
+			}
+			
+			html += "</font></li>";
+		}
+		
+		html += "</ul></html>";
+		
 		plugin.provider.refresh();
+		Msg.showInfo(this, plugin.provider.getComponent(), "Renamed functions", html);
 	}
 	
-	final class RenameCmd implements Command
-	{
-		Map<Symbol, String> map;
-		
-		public RenameCmd(Map<Symbol, String> m)
-		{
-			map = m;
-		}
-		
-		@Override
-		public boolean applyTo(DomainObject arg0) {
-			try {
-				
-				for (var e: map.entrySet())
-				{
-					e.getKey().setName(e.getValue(), SourceType.IMPORTED);
-				}
-			} catch (DuplicateNameException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			} catch (InvalidInputException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
-			return true;
-		}
-
-		@Override
-		public String getName() {
-			return "Rename symbols";
-		}
-
-		@Override
-		public String getStatusMsg() {
-			return null;
-		}
-		
-	}
 }
