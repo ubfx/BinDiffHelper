@@ -105,8 +105,8 @@ public class BinDiffHelperPlugin extends ProgramPlugin {
 	{
 		File out = null;
 		
-		try {			
-			var dof = df.getImmutableDomainObject(this, DomainFile.DEFAULT_VERSION, TaskMonitor.DUMMY);
+		try {
+			var dof = df.getReadOnlyDomainObject(this, DomainFile.DEFAULT_VERSION, TaskMonitor.DUMMY);
 			
 			if (dof instanceof Program)
 			{
