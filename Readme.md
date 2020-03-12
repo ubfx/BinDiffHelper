@@ -1,12 +1,13 @@
 # BinDiffHelper
 
-Ghidra extension that helps importing function names from BinDiffs (BinDiff 6 supported).
+Ghidra extension that uses BinDiff on your Ghidra project to find matching functions and rename them automatically (BinDiff 6 supported).
+Check out the [BinDiff manual](https://www.zynamics.com/bindiff/manual/) to see how it works and how it matches functions / basic blocks. However, with this extension, BinDiff is automated from within Ghidra, so you don't have to diff your binaries yourself.
 
 ## What it does / Changelog
 
 ### v0.1
-* Open a BinDiff file, created with BinDiff 6, from two .BinExport files and import the matching function names in Ghidra
 * BinDiff the binary opened in Ghidra with another binary from the same Ghidra project, show results and import function names
+* Open a BinDiff file, created with BinDiff 6, from two .BinExport files and import the matching function names in Ghidra
 
 ### v0.2
 * Fix a bug where the file to import to needed to be checked out.
@@ -15,7 +16,6 @@ Ghidra extension that helps importing function names from BinDiffs (BinDiff 6 su
 ### Next release
 * Compare the binary opened in Ghidra with an external .BinExport (from IDA for example)
 * Communication with the BinDiff 6 GUI to show graphs for the different functions
-
 
 ## How to Install
 Either download the .zip-File from the [release](https://github.com/ubfx/BinDiffHelper/releases), if it's compatible to your Ghidra version, otherwise see *How to build* below.
