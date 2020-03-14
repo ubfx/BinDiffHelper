@@ -13,7 +13,8 @@ Check out the [BinDiff manual](https://www.zynamics.com/bindiff/manual/) to see 
 * Fix a bug where the file to import to needed to be checked out.
 * Increase size of project file selection dialog
 
-### Next release
+### Next releases
+* Import function names and function parameters (type and name)
 * Compare the binary opened in Ghidra with an external .BinExport (from IDA for example)
 * Communication with the BinDiff 6 GUI to show graphs for the different functions
 
