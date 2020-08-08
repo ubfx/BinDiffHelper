@@ -244,7 +244,7 @@ public class BinDiffHelperProvider extends ComponentProviderAdapter {
 			Msg.showInfo(this, getComponent(), "Info", "Unexpected filename ending (expected .BinDiff)");
 		}
 		
-		String pname = program.getName().toString();
+		String pname = program.getDomainFile().getName().toString();
 		
 		BinExport2File[] bi = new BinExport2File[2];
 		int loadedProgramIndex = -1;
@@ -273,7 +273,7 @@ public class BinDiffHelperProvider extends ComponentProviderAdapter {
 						return;
 					}
 					
-					if (pname.equals(filenames[i][1]))
+					if (pname.equals(filenames[i][0]))
 					{
 						loadedProgramIndex = i;
 					
