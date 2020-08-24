@@ -28,6 +28,8 @@ import java.sql.ResultSet;
 import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
+import java.util.TreeSet;
 
 import javax.swing.JComponent;
 import javax.swing.JLabel;
@@ -206,7 +208,7 @@ public class BinDiffHelperProvider extends ComponentProviderAdapter {
 		
 		return ret;
 	}
-	
+
 	protected String[][] getBinDiffFilenames(Connection conn) throws Exception
 	{
 		String[][] ret = new String[2][2];
@@ -301,7 +303,10 @@ public class BinDiffHelperProvider extends ComponentProviderAdapter {
 			}
 			
 			Statement stmt = conn.createStatement();
-			ResultSet rs = stmt.executeQuery("SELECT address1, address2, similarity, name FROM function JOIN functionalgorithm ON function.algorithm=functionalgorithm.id ORDER BY similarity DESC");
+			ResultSet rs = stmt.executeQuery( "SELECT address1, address2, similarity, confidence, name "
+					+ "FROM function JOIN functionalgorithm ON function.algorithm=functionalgorithm.id "
+					+ "ORDER BY similarity DESC"
+					);
 			
 			String priAddressCol, secAddressCol;
 			if (loadedProgramIndex == 0)
@@ -317,6 +322,11 @@ public class BinDiffHelperProvider extends ComponentProviderAdapter {
 			
 			AddressSpace addrSpace = program.getAddressFactory().getDefaultAddressSpace();
 			
+			Set<Long> priFnSet = bi[0].getFunctionAddressSet();
+			Set<Long> commonPriFnSet = new TreeSet<Long>();
+			Set<Long> secFnSet = bi[1].getFunctionAddressSet();
+			Set<Long> commonSecFnSet = new TreeSet<Long>();
+
 			
 			ctm = new ComparisonTableModel();
 			var st = program.getSymbolTable();
@@ -326,6 +336,10 @@ public class BinDiffHelperProvider extends ComponentProviderAdapter {
 
 				Address priAddress = addrSpace.getAddress(rs.getLong(priAddressCol));
 				long secAddress = rs.getLong(secAddressCol);
+				
+				// Store the addresses of functions that are the same so we can add sets of functions that are in one but not the other
+				commonPriFnSet.add(rs.getLong(priAddressCol));
+				commonSecFnSet.add(rs.getLong(secAddressCol));
 
 				Symbol s = null;
 				
@@ -336,7 +350,9 @@ public class BinDiffHelperProvider extends ComponentProviderAdapter {
 				String secFn = bi[1].getFunctionName(secAddress);
 				
 				double similarity = rs.getDouble("similarity");
+				double confidence = rs.getDouble("confidence");
 				
+				// TODO: Document this: Note to self, this assumes that the DB that has had the work done to it is the secondary.  IE we are looking at a new file and we've done a bindiff against a DB where we've already done some RE work.  We may want to add toggle here so if you are trying to look at a "new" db as the secondary file we do the right thing.
 				boolean defaultTicked = similarity == 1.0f && !secFn.startsWith("thunk_FUN_") && !secFn.startsWith("FUN_") && !priFn.equals(secFn);
 				ctm.addEntry(
 						new ComparisonTableModel.Entry(defaultTicked,
@@ -346,10 +362,35 @@ public class BinDiffHelperProvider extends ComponentProviderAdapter {
 								secAddress,
 								secFn,
 								similarity,
+								confidence,
 								rs.getString("name"))
 				);
 			}
 			stmt.close();
+			
+			// Now lets add functions that are in our program but not the other to the list
+			Set<Long> onlyInPrimary = new TreeSet<Long>(priFnSet);
+			onlyInPrimary.removeAll(commonPriFnSet);
+			Set<Long> onlyInSecondary = new TreeSet<Long>(secFnSet);
+			onlyInSecondary.removeAll(commonSecFnSet);
+			// Lets add the functions that are only in the primary here
+			for(Long x : onlyInPrimary) {
+				Address priAddress = addrSpace.getAddress(x);
+				Symbol s = null;
+				String priFn = bi[0].getFunctionName(priAddress);
+				if(st.hasSymbol(priAddress))
+					s = st.getSymbols(priAddress)[0];
+				ctm.addEntry(
+						new ComparisonTableModel.Entry(false, priAddress, priFn, s, 0, null, 0, 1, "Only in primary")
+						);
+			}
+			// Lets add the functions that are only in the secondary here
+			for(Long x : onlyInSecondary) {
+				String secFn = bi[1].getFunctionName(x);
+				ctm.addEntry(
+						new ComparisonTableModel.Entry(false, null, null, null, x, secFn, 0, 1, "Only in Secondary")
+						);
+			}
 			
 			Msg.showInfo(this, this.getComponent(), "Success", "Opened successfully");
 			
