@@ -3,6 +3,7 @@ package bindiffhelper;
 import java.io.File;
 import java.io.FileInputStream;
 import java.util.HashMap;
+import java.util.Set;
 
 import com.google.security.zynamics.BinExport.BinExport2;
 import com.google.security.zynamics.BinExport.BinExport2.CallGraph;
@@ -27,6 +28,10 @@ public class BinExport2File {
 		{
 			functionNames.put(v.getAddress(), v.getMangledName());
 		}
+	}
+	
+	public Set<Long> getFunctionAddressSet(){
+		return functionNames.keySet();
 	}
 	
 	public boolean hasFunctionName(long address)
