@@ -9,7 +9,12 @@ import ghidra.program.model.address.Address;
 import ghidra.program.model.symbol.Symbol;
 
 public class ComparisonTableModel extends AbstractTableModel {
-    private String[] columnNames = {
+    /**
+	 * 
+	 */
+	private static final long serialVersionUID = 1L;
+
+	private String[] columnNames = {
     		"Import",
     		"Address this file",
     		"Name this file",

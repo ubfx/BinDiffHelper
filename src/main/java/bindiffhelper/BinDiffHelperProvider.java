@@ -72,6 +72,7 @@ public class BinDiffHelperProvider extends ComponentProviderAdapter {
 	
 	protected ImportFunctionNamesAction fna;
 	protected UpdatePlateCommentsAction upca;
+	protected UpdateFunctionColoringAction ufca;
 	protected OpenFromProjectAction op;
 	
 	protected CodeViewerService cvs;
@@ -166,11 +167,14 @@ public class BinDiffHelperProvider extends ComponentProviderAdapter {
 		fna.setEnabled(false);
 		upca = new UpdatePlateCommentsAction(plugin);
 		upca.setEnabled(false);
+		ufca = new UpdateFunctionColoringAction(plugin);
+		ufca.setEnabled(false);
 
 		addLocalAction(odb);
 		addLocalAction(op);
 		addLocalAction(fna);
 		addLocalAction(upca);
+		addLocalAction(ufca);
 	}
 	
 	void dispose() {
@@ -433,6 +437,8 @@ public class BinDiffHelperProvider extends ComponentProviderAdapter {
 			fna.setEnabled(true);
 			upca.setEntries(ctm.getEntries());
 			upca.setEnabled(true);
+			ufca.setEntries(ctm.getEntries());
+			ufca.setEnabled(true);
 			
 			refresh();
 		} catch (Exception e) {
