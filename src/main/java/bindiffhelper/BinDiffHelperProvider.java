@@ -71,9 +71,13 @@ public class BinDiffHelperProvider extends ComponentProviderAdapter {
 	protected Program program;
 	
 	protected ImportFunctionNamesAction fna;
+	protected UpdatePlateCommentsAction upca;
 	protected OpenFromProjectAction op;
 	
 	protected CodeViewerService cvs;
+	
+	public String thisProg;
+	public String otherProg;
 	
 	protected final boolean hasExporter;
 	
@@ -160,12 +164,13 @@ public class BinDiffHelperProvider extends ComponentProviderAdapter {
 		
 		fna = new ImportFunctionNamesAction(plugin);
 		fna.setEnabled(false);
-		
+		upca = new UpdatePlateCommentsAction(plugin);
+		upca.setEnabled(false);
+
 		addLocalAction(odb);
 		addLocalAction(op);
-		
 		addLocalAction(fna);
-		
+		addLocalAction(upca);
 	}
 	
 	void dispose() {
@@ -280,9 +285,13 @@ public class BinDiffHelperProvider extends ComponentProviderAdapter {
 						loadedProgramIndex = i;
 					
 						bi[0] = new BinExport2File(binExportFile);
+						thisProg = filenames[i][0];
 					}
 					else
+					{
 						bi[1] = new BinExport2File(binExportFile);
+						otherProg = filenames[i][0];
+					}
 				}
 				
 				if (loadedProgramIndex == -1)
@@ -422,6 +431,8 @@ public class BinDiffHelperProvider extends ComponentProviderAdapter {
 			
 			fna.setEntries(ctm.getEntries());
 			fna.setEnabled(true);
+			upca.setEntries(ctm.getEntries());
+			upca.setEnabled(true);
 			
 			refresh();
 		} catch (Exception e) {
