@@ -73,7 +73,6 @@ public class BinDiffHelperProvider extends ComponentProviderAdapter {
 	protected ImportFunctionNamesAction fna;
 	protected UpdatePlateCommentsAction upca;
 	protected UpdateFunctionColoringAction ufca;
-	protected GeneralOpenAction op;
 	
 	protected CodeViewerService cvs;
 	
@@ -144,20 +143,10 @@ public class BinDiffHelperProvider extends ComponentProviderAdapter {
 		gui.repaint();
 	}
 	
-	
-	public void settingsUpdated()
-	{
-		//op.setEnabled(hasExporter && plugin.binDiff6Binary != null);
-	}
-	
 	private void createActions()
 	{
-		//OpenFromBDFileAction odb = new OpenFromBDFileAction(plugin);
-		op = new GeneralOpenAction(plugin);
+		GeneralOpenAction op = new GeneralOpenAction(plugin);
 		SettingsDialogAction sa = new SettingsDialogAction(plugin);
-		//OpenBinDiffGuiAction obd = new OpenBinDiffGuiAction(plugin);
-		
-		settingsUpdated();
 		
 		addLocalAction(sa);
 		
@@ -168,7 +157,6 @@ public class BinDiffHelperProvider extends ComponentProviderAdapter {
 		ufca = new UpdateFunctionColoringAction(plugin);
 		ufca.setEnabled(false);
 
-		//addLocalAction(odb);
 		addLocalAction(op);
 		addLocalAction(fna);
 		addLocalAction(upca);
@@ -272,7 +260,6 @@ public class BinDiffHelperProvider extends ComponentProviderAdapter {
 			
 			if (be0 == null || be1 == null)
 			{				
-				//String[][] filenames = getBinDiffFilenames(conn);
 				BinDiffFileDescriptor[] fds = getBinDiffFileDescriptors(conn);
 				
 				Path bindiff = Paths.get(filename);
@@ -288,24 +275,12 @@ public class BinDiffHelperProvider extends ComponentProviderAdapter {
 					}
 					
 					bi[i] = new BinExport2File(binExportFile);
-					/*
-					if (pname.equals(fds[i].getFilename()))
-					{
-						loadedProgramIndex = i;
-					
-						bi[0] = new BinExport2File(binExportFile);
-						thisProg = fds[i].getFilename();
-					}
-					else
-					{
-						bi[1] = new BinExport2File(binExportFile);
-						otherProg = fds[i].getFilename();
-					}*/
 				}
 				
 				MatchDialog md = new MatchDialog(program, fds);
 				tool.showDialog(md);
 				
+				loadedProgramIndex = md.getSelected();
 				if (loadedProgramIndex == -1)
 				{
 					Msg.showError(this, getComponent(), "Error",
@@ -313,7 +288,20 @@ public class BinDiffHelperProvider extends ComponentProviderAdapter {
 							fds[0].getFilename() + "\n" + fds[1].getFilename());
 					
 					return;
+				} else if (loadedProgramIndex == 1) {
+					// TODO: fix this
+					BinExport2File temp = bi[0];
+					bi[0] = bi[1];
+					bi[1] = temp;
+					
+					thisProg = fds[1].getFilename();
+					otherProg = fds[0].getFilename();
+				} else {
+					thisProg = fds[0].getFilename();
+					otherProg = fds[1].getFilename();
 				}
+				
+				
 			}
 			else
 			{
@@ -371,7 +359,9 @@ public class BinDiffHelperProvider extends ComponentProviderAdapter {
 				double similarity = rs.getDouble("similarity");
 				double confidence = rs.getDouble("confidence");
 				
-				// TODO: Document this: Note to self, this assumes that the DB that has had the work done to it is the secondary.  IE we are looking at a new file and we've done a bindiff against a DB where we've already done some RE work.  We may want to add toggle here so if you are trying to look at a "new" db as the secondary file we do the right thing.
+				// TODO: Document this: Note to self, this assumes that the DB that has had the work done to it is the secondary. 
+				// IE we are looking at a new file and we've done a bindiff against a DB where we've already done some RE work.
+				// We may want to add toggle here so if you are trying to look at a "new" db as the secondary file we do the right thing.
 				boolean defaultTicked = similarity == 1.0f && !secFn.startsWith("thunk_FUN_") && !secFn.startsWith("FUN_") && !priFn.equals(secFn);
 				ctm.addEntry(
 						new ComparisonTableModel.Entry(defaultTicked,
@@ -453,59 +443,6 @@ public class BinDiffHelperProvider extends ComponentProviderAdapter {
 		}		
 	}
 	
-	public DomainFile df;
-	/*
-	public class OpenFromBDFileAction extends DockingAction implements OpenDialog.Caller {
-
-		BinDiffHelperPlugin plugin;
-		
-		public OpenFromBDFileAction(BinDiffHelperPlugin plugin) {
-			super("Open from BinDiffFile", plugin.getName());
-			
-			this.setMenuBarData(new MenuData(new String[] { "Open", "From BinDiffFile" }, "Open"));
-			
-			setToolBarData(new ToolBarData(ResourceManager.loadImage("images/open_db.png"), "Open"));
-
-			setDescription(HTMLUtilities.toHTML("Open from BinDiff output file"));
-			
-			this.plugin = plugin;
-			
-		}
-	
-		@Override
-		public void actionPerformed(ActionContext context) {		
-			OpenDialog d = new OpenDialog(this, "Open BinDiff 6 file", "de.ubfx.bindiffhelper.bindiffinputfile",
-					"Select the File created with BinDiff 6 (usually ends in .BinDiff)");
-			DockingWindowManager.showDialog(d, plugin.provider.getComponent());
-		}
-
-		@Override
-		public void importDialogFileSelected(String filename) {
-			if (!filename.isEmpty())
-				openBinDiffDB(filename);
-		}
-		
-	}
-	
-	public class OpenFromProjectAction extends DockingAction {
-
-		public OpenFromProjectAction(BinDiffHelperPlugin plugin) {
-			super("Open from Project", plugin.getName());
-			
-			this.setMenuBarData(new MenuData(new String[] { "Open", "From Project" }, "Open"));
-			
-			setToolBarData(new ToolBarData(ResourceManager.loadImage("images/open_from_project.png"), "Open"));
-
-			setDescription(HTMLUtilities.toHTML("Open from Project"));
-			
-		}
-
-		@Override
-		public void actionPerformed(ActionContext context) {
-			DockingWindowManager.showDialog(new OpenFromProjectDialog(plugin));
-		}		
-	}
-	*/
 	public class GeneralOpenAction extends DockingAction {
 
 		public GeneralOpenAction(BinDiffHelperPlugin plugin) {
@@ -560,6 +497,14 @@ public class BinDiffHelperProvider extends ComponentProviderAdapter {
 		
 		public String getFilename() {
 			return filename;
+		}
+		
+		public String getExeFilename() {
+			return exefilename;
+		}
+		
+		public String getHash() {
+			return hash;
 		}
 	}
 }
