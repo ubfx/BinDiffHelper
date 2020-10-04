@@ -73,7 +73,7 @@ public class BinDiffHelperProvider extends ComponentProviderAdapter {
 	protected ImportFunctionNamesAction fna;
 	protected UpdatePlateCommentsAction upca;
 	protected UpdateFunctionColoringAction ufca;
-	protected OpenFromProjectAction op;
+	protected GeneralOpenAction op;
 	
 	protected CodeViewerService cvs;
 	
@@ -154,8 +154,8 @@ public class BinDiffHelperProvider extends ComponentProviderAdapter {
 	
 	private void createActions()
 	{
-		OpenFromBDFileAction odb = new OpenFromBDFileAction(plugin);
-		op = new OpenFromProjectAction(plugin);
+		//OpenFromBDFileAction odb = new OpenFromBDFileAction(plugin);
+		op = new GeneralOpenAction(plugin);
 		SettingsDialogAction sa = new SettingsDialogAction(plugin);
 		//OpenBinDiffGuiAction obd = new OpenBinDiffGuiAction(plugin);
 		
@@ -170,7 +170,7 @@ public class BinDiffHelperProvider extends ComponentProviderAdapter {
 		ufca = new UpdateFunctionColoringAction(plugin);
 		ufca.setEnabled(false);
 
-		addLocalAction(odb);
+		//addLocalAction(odb);
 		addLocalAction(op);
 		addLocalAction(fna);
 		addLocalAction(upca);
@@ -218,19 +218,21 @@ public class BinDiffHelperProvider extends ComponentProviderAdapter {
 		return ret;
 	}
 
-	protected String[][] getBinDiffFilenames(Connection conn) throws Exception
+	protected BinDiffFileDescriptor[] getBinDiffFileDescriptors(Connection conn) throws Exception
 	{
-		String[][] ret = new String[2][2];
+		BinDiffFileDescriptor[] ret = new BinDiffFileDescriptor[2];
 		
 		Statement stmt = conn.createStatement();
 		
-		ResultSet rs = stmt.executeQuery("SELECT filename, exefilename FROM file");
+		ResultSet rs = stmt.executeQuery("SELECT filename, exefilename, hash FROM file");
 		
-		int i = 0;
-		while (rs.next())
-		{
-			ret[i][0] = rs.getString("filename");
-			ret[i++][1] = rs.getString("exefilename");
+		for (int i = 0; i < 2; i++) {
+			if (!rs.next())
+				throw new Exception("");
+			
+			ret[i] = new BinDiffFileDescriptor(rs.getNString("filename"),
+					rs.getString("exefilename"),
+					rs.getString("hash"));
 		}
 		
 		stmt.close();
@@ -249,7 +251,10 @@ public class BinDiffHelperProvider extends ComponentProviderAdapter {
 		{
 			return;
 		}
-			
+		
+		MatchDialog md = new MatchDialog();
+		tool.showDialog(md);
+		
 		if (!filename.endsWith(".BinDiff"))
 		{
 			Msg.showInfo(this, getComponent(), "Info", "Unexpected filename ending (expected .BinDiff)");
@@ -271,12 +276,14 @@ public class BinDiffHelperProvider extends ComponentProviderAdapter {
 			
 			if (be0 == null || be1 == null)
 			{
-				String[][] filenames = getBinDiffFilenames(conn);
+				//String[][] filenames = getBinDiffFilenames(conn);
+				BinDiffFileDescriptor[] fds = getBinDiffFileDescriptors(conn);
+				
 				Path bindiff = Paths.get(filename);
 				
 				for (int i = 0; i < 2; i++)
 				{
-					File binExportFile = bindiff.resolveSibling(filenames[i][0] + ".BinExport").toFile();
+					File binExportFile = bindiff.resolveSibling(fds[i].getFilename() + ".BinExport").toFile();
 					
 					if (!binExportFile.exists())
 					{
@@ -284,17 +291,17 @@ public class BinDiffHelperProvider extends ComponentProviderAdapter {
 						return;
 					}
 					
-					if (pname.equals(filenames[i][0]))
+					if (pname.equals(fds[i].getFilename()))
 					{
 						loadedProgramIndex = i;
 					
 						bi[0] = new BinExport2File(binExportFile);
-						thisProg = filenames[i][0];
+						thisProg = fds[i].getFilename();
 					}
 					else
 					{
 						bi[1] = new BinExport2File(binExportFile);
-						otherProg = filenames[i][0];
+						otherProg = fds[i].getFilename();
 					}
 				}
 				
@@ -302,7 +309,7 @@ public class BinDiffHelperProvider extends ComponentProviderAdapter {
 				{
 					Msg.showError(this, getComponent(), "Error",
 							"Could not find loaded Program in BinDiff files\n" + pname + "\nin\n" +
-							filenames[0][0] + "\n" + filenames[0][0]);
+							fds[0].getFilename() + "\n" + fds[1].getFilename());
 					
 					return;
 				}
@@ -448,7 +455,7 @@ public class BinDiffHelperProvider extends ComponentProviderAdapter {
 	}
 	
 	public DomainFile df;
-	
+	/*
 	public class OpenFromBDFileAction extends DockingAction implements OpenDialog.Caller {
 
 		BinDiffHelperPlugin plugin;
@@ -499,6 +506,25 @@ public class BinDiffHelperProvider extends ComponentProviderAdapter {
 			DockingWindowManager.showDialog(new OpenFromProjectDialog(plugin));
 		}		
 	}
+	*/
+	public class GeneralOpenAction extends DockingAction {
+
+		public GeneralOpenAction(BinDiffHelperPlugin plugin) {
+			super("Open from Project", plugin.getName());
+			
+			this.setMenuBarData(new MenuData(new String[] { "Open", "Open a file for comparison" }, "Open"));
+			
+			setToolBarData(new ToolBarData(ResourceManager.loadImage("images/open_from_project.png"), "Open"));
+
+			setDescription(HTMLUtilities.toHTML("Open a file for comparison"));
+			
+		}
+
+		@Override
+		public void actionPerformed(ActionContext context) {
+			DockingWindowManager.showDialog(new GeneralOpenDialog(plugin));
+		}		
+	}
 	
 	public class SettingsDialogAction extends DockingAction {
 
@@ -521,5 +547,20 @@ public class BinDiffHelperProvider extends ComponentProviderAdapter {
 		public void actionPerformed(ActionContext context) {
 			DockingWindowManager.showDialog(new SettingsDialog(plugin));
 		}	
+	}
+	
+	public class BinDiffFileDescriptor {
+		private String filename, exefilename, hash;
+		
+		public BinDiffFileDescriptor(String filename, String exefilename, String hash)
+		{
+			this.filename = filename;
+			this.exefilename = exefilename;
+			this.hash = hash;
+		}
+		
+		public String getFilename() {
+			return filename;
+		}
 	}
 }
