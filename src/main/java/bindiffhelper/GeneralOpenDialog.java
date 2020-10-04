@@ -15,7 +15,6 @@ import docking.widgets.filechooser.GhidraFileChooserPanel;
 import ghidra.framework.main.AppInfo;
 import ghidra.framework.main.datatree.ProjectDataTreePanel;
 import ghidra.util.Msg;
-import ghidra.framework.model.DomainFile;
 
 public class GeneralOpenDialog extends DialogComponentProvider {
 	
@@ -39,16 +38,27 @@ public class GeneralOpenDialog extends DialogComponentProvider {
 				
 		panel.add(l);
 		
-		tp = new ProjectDataTreePanel(null);
-		tp.setProjectData(AppInfo.getActiveProject().getName(), AppInfo.getActiveProject().getProjectData());
-		tp.setBorder(BorderFactory.createTitledBorder("Diff with another file from Ghidra project"));
-		tp.setAlignmentX(Component.LEFT_ALIGNMENT);
-		tp.setPreferredSize(new Dimension(400, 300));
+		JPanel projectPanel;
+		if (plugin.provider.hasExporter && plugin.binDiff6Binary != null) {
+			tp = new ProjectDataTreePanel(null);
+			tp.setProjectData(AppInfo.getActiveProject().getName(), AppInfo.getActiveProject().getProjectData());
+			
+			tp.setPreferredSize(new Dimension(400, 300));
+			
+			projectPanel = tp;
+		}
+		else {
+			projectPanel = new JPanel();
+			projectPanel.add(new JLabel("<html><p style='width:300px;'>BinDiff6 binary not selected or BinExport "
+					+ "plugin not detected so this feature is not available. Check the settings menu.</p></html>"));
+		}
 		
-		panel.add(tp);
+		projectPanel.setBorder(BorderFactory.createTitledBorder("Diff with another file from Ghidra project"));
+		projectPanel.setAlignmentX(Component.LEFT_ALIGNMENT);
+		panel.add(projectPanel);
 		
 		panel.add(Box.createRigidArea(new Dimension(0, 20)));
-		
+		/*
 		extBEFilePanel = new GhidraFileChooserPanel("", "de.ubfx.bindiffhelper.extbefile",
 				"", true, GhidraFileChooserPanel.INPUT_MODE);
 		
@@ -58,7 +68,8 @@ public class GeneralOpenDialog extends DialogComponentProvider {
 		extBEFilePanel.setAlignmentX(Component.LEFT_ALIGNMENT);
 		
 		panel.add(extBEFilePanel);
-		panel.add(Box.createRigidArea(new Dimension(0, 20)));
+		panel.add(Box.createRigidArea(new Dimension(0, 20)));*/
+		
 		
 		extBDFilePanel = new GhidraFileChooserPanel("", "de.ubfx.bindiffhelper.extbdfile",
 				"", true, GhidraFileChooserPanel.INPUT_MODE);
@@ -91,7 +102,7 @@ public class GeneralOpenDialog extends DialogComponentProvider {
 			//
 			
 		}
-		else if (tp.getSelectedItemCount() == 1) {
+		else if (tp != null && tp.getSelectedItemCount() == 1) {
 			if (tp.getSelectedDomainFolder() != null) {
 				Msg.showError(this, getComponent(), "Error", 
 						"You seem to have selected a folder. Please select a single file.");

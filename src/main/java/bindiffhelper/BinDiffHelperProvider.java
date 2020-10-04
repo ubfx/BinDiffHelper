@@ -77,10 +77,9 @@ public class BinDiffHelperProvider extends ComponentProviderAdapter {
 	
 	protected CodeViewerService cvs;
 	
-	public String thisProg;
-	public String otherProg;
-	
 	protected final boolean hasExporter;
+	
+	protected String thisProg, otherProg;
 	
 	public BinDiffHelperProvider(BinDiffHelperPlugin plugin, Program program) {
 		super(plugin.getTool(), "BinDiffHelper GUI Provider", plugin.getName());
@@ -89,7 +88,6 @@ public class BinDiffHelperProvider extends ComponentProviderAdapter {
 		
 		this.plugin = plugin;
 		setProgram(program);
-		
 		
 		setIcon(ResourceManager.loadImage("images/BDH.png"));
 		
@@ -149,7 +147,7 @@ public class BinDiffHelperProvider extends ComponentProviderAdapter {
 	
 	public void settingsUpdated()
 	{
-		op.setEnabled(hasExporter && plugin.binDiff6Binary != null);
+		//op.setEnabled(hasExporter && plugin.binDiff6Binary != null);
 	}
 	
 	private void createActions()
@@ -230,7 +228,7 @@ public class BinDiffHelperProvider extends ComponentProviderAdapter {
 			if (!rs.next())
 				throw new Exception("");
 			
-			ret[i] = new BinDiffFileDescriptor(rs.getNString("filename"),
+			ret[i] = new BinDiffFileDescriptor(rs.getString("filename"),
 					rs.getString("exefilename"),
 					rs.getString("hash"));
 		}
@@ -252,20 +250,16 @@ public class BinDiffHelperProvider extends ComponentProviderAdapter {
 			return;
 		}
 		
-		MatchDialog md = new MatchDialog();
-		tool.showDialog(md);
-		
 		if (!filename.endsWith(".BinDiff"))
 		{
 			Msg.showInfo(this, getComponent(), "Info", "Unexpected filename ending (expected .BinDiff)");
 		}
 		
-		String pname = program.getDomainFile().getName().toString();
-		
-		BinExport2File[] bi = new BinExport2File[2];
-		int loadedProgramIndex = -1;
-		
 		try {
+			String pname = program.getDomainFile().getName().toString();
+			
+			BinExport2File[] bi = new BinExport2File[2];
+			
 			conn = DriverManager.getConnection("jdbc:sqlite:" + filename);
 			
 			if (!isBinDiff6(conn)) {
@@ -274,8 +268,10 @@ public class BinDiffHelperProvider extends ComponentProviderAdapter {
 				return;
 			}
 			
+			int loadedProgramIndex = -1;
+			
 			if (be0 == null || be1 == null)
-			{
+			{				
 				//String[][] filenames = getBinDiffFilenames(conn);
 				BinDiffFileDescriptor[] fds = getBinDiffFileDescriptors(conn);
 				
@@ -291,6 +287,8 @@ public class BinDiffHelperProvider extends ComponentProviderAdapter {
 						return;
 					}
 					
+					bi[i] = new BinExport2File(binExportFile);
+					/*
 					if (pname.equals(fds[i].getFilename()))
 					{
 						loadedProgramIndex = i;
@@ -302,8 +300,11 @@ public class BinDiffHelperProvider extends ComponentProviderAdapter {
 					{
 						bi[1] = new BinExport2File(binExportFile);
 						otherProg = fds[i].getFilename();
-					}
+					}*/
 				}
+				
+				MatchDialog md = new MatchDialog(program, fds);
+				tool.showDialog(md);
 				
 				if (loadedProgramIndex == -1)
 				{
@@ -318,8 +319,6 @@ public class BinDiffHelperProvider extends ComponentProviderAdapter {
 			{
 				bi[0] = new BinExport2File(be0);
 				bi[1] = new BinExport2File(be1);
-				
-				loadedProgramIndex = 0;
 			}
 			
 			Statement stmt = conn.createStatement();
