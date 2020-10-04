@@ -16,7 +16,7 @@ public class UpdatePlateCommentsAction extends DockingAction {
 	public UpdatePlateCommentsAction(BinDiffHelperPlugin plugin) {
 		super("Create plate comments", plugin.getName());
 		this.setMenuBarData(new MenuData(new String[] {"update", "Plate Comments"}));
-		setToolBarData(new ToolBarData(ResourceManager.loadImage("images/Comment.png"), "Update Plate Comments"));
+		setToolBarData(new ToolBarData(ResourceManager.loadImage("images/comment.png"), "Update Plate Comments"));
 		setDescription(HTMLUtilities.toHTML("Set plate comments with similarity and links to other binary"));
 		this.plugin = plugin;
 	}
@@ -78,9 +78,9 @@ public class UpdatePlateCommentsAction extends DockingAction {
 				var f = funmgr.getFunctionAt(e.primaryAddress);
 				String origComment = f.getComment();
 				String newBindiffComment =
-						String.format("*** %.2f%% match with %.2f%% confidence using %s ***"
-								, e.similarity
-								, e.confidence
+						String.format("*** %2f%% match with %2f%% confidence using %s ***"
+								, e.similarity * 100
+								, e.confidence * 100
 								, e.algorithm );
 				String newFunctionLinkComment = 
 						String.format("*** %s@%08x {@program %s@%08x} ***"
