@@ -56,7 +56,7 @@ public class SettingsDialog extends DialogComponentProvider {
 		} catch (IOException e) {
 			Msg.showError(this, getComponent(), "Error", e.toString());
 		}
-		plugin.provider.settingsUpdated();
+
 		plugin.provider.generateWarnings();
 	}
 }
