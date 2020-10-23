@@ -22,7 +22,9 @@ import java.io.InputStreamReader;
 import java.nio.file.FileSystems;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 import ghidra.app.ExamplesPluginPackage;
 import ghidra.app.plugin.PluginCategoryNames;
@@ -37,6 +39,7 @@ import ghidra.framework.preferences.Preferences;
 import ghidra.program.model.listing.Program;
 import ghidra.util.Msg;
 import ghidra.util.classfinder.ClassSearcher;
+import ghidra.util.exception.CancelledException;
 import ghidra.util.task.TaskDialog;
 import ghidra.util.task.TaskMonitor;
 
@@ -110,7 +113,7 @@ public class BinDiffHelperPlugin extends ProgramPlugin {
 			
 			if (dof instanceof Program)
 			{
-				out = File.createTempFile(df.getName(), ".BinExport");
+				out = File.createTempFile(df.getName() + "_bdh", ".BinExport");
 				
 				if (binExportExporter.export(out, dof, null, TaskMonitor.DUMMY) == false)
 				{
@@ -140,9 +143,10 @@ public class BinDiffHelperPlugin extends ProgramPlugin {
 		
 		File[] ret = null;
 		
-		TaskDialog d = new TaskDialog("Exporting", false, false, true);
-		tool.showDialog(d);
+		TaskDialog d = new TaskDialog("Exporting", true, false, true);
 		d.setMaximum(5);
+		tool.showDialog(d);
+		
 		d.setMessage("Exporting primary file");
 		final var sec = binExportDomainFile(df);
 		d.incrementProgress(1);
@@ -159,25 +163,38 @@ public class BinDiffHelperPlugin extends ProgramPlugin {
 		
 		Msg.debug(this, "bd6: " + binDiff6Binary + "\nfiles:" + pri.getAbsolutePath() + "," + sec.getAbsolutePath() + "\n"+
 				"output dir: " + outputDir);
-		Msg.debug(this, "printing BD6 output");
+		Msg.debug(this, "printing BD6 output for cmd: " + Arrays.toString(cmd));
+		Process p = null;
 		try {
-			var p = Runtime.getRuntime().exec(cmd);
-			p.waitFor();
+			p = Runtime.getRuntime().exec(cmd);
 			var i = new BufferedReader(new InputStreamReader(p.getInputStream()));
-			while (true)
-			{
-				String line = i.readLine();
+			
+			while (!p.waitFor(1, TimeUnit.SECONDS)) {
+				while (true)
+				{
+					String line = i.readLine();
+					
+					if (line == null)
+						break;
+					
+					Msg.debug(this, ">" + line);
+				}
 				
-				if (line == null)
-					break;
-				
-				Msg.debug(this, ">" + line);
+				d.checkCanceled();
 			}
+			
 			Msg.debug(this, "end of output");
 			
 		} catch (IOException | InterruptedException e) {
 			Msg.showError(this, d.getComponent(), "Error", "Error when Exporting");
 			d.close();
+			return null;
+		} catch (CancelledException e) {
+			if (p != null) {
+				p.destroyForcibly();
+			}
+			d.close();
+			
 			return null;
 		}
 		
