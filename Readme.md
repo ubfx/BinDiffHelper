@@ -19,6 +19,9 @@ Check out the [BinDiff manual](https://www.zynamics.com/bindiff/manual/) to see 
 * Fixed a bug where protobuf library was missing in some builds
 * New file load menu
 
+### v0.3.1
+* Fixed a crash when opening a file via the "from project" option
+
 ### Next releases
 * Import function names and function parameters (type and name)
 * Compare the binary opened in Ghidra with an external .BinExport (from IDA for example)
