@@ -98,10 +98,10 @@ public class GeneralOpenDialog extends DialogComponentProvider {
 		if (!extBDFilePanel.getFileName().isEmpty()) {
 			plugin.provider.openBinDiffDB(extBDFilePanel.getFileName());
 		}
-		else if (!extBEFilePanel.getFileName().isEmpty()) {
-			//
+		/*else if (!extBEFilePanel.getFileName().isEmpty()) {
+		
 			
-		}
+		}*/
 		else if (tp != null && tp.getSelectedItemCount() == 1) {
 			if (tp.getSelectedDomainFolder() != null) {
 				Msg.showError(this, getComponent(), "Error", 
