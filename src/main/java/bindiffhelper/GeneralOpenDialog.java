@@ -118,7 +118,9 @@ public class GeneralOpenDialog extends DialogComponentProvider {
 			
 			var files = plugin.callBinDiff(df);
 			
-			plugin.provider.openBinDiffDB(files[2].getAbsolutePath(), files[0], files[1]);
+			if (files != null) {
+				plugin.provider.openBinDiffDB(files[2].getAbsolutePath(), files[0], files[1]);
+			}
 		}
 		else {
 			Msg.showError(this, getComponent(), "Error", "No valid selection");
