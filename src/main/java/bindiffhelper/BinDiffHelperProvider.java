@@ -305,6 +305,7 @@ public class BinDiffHelperProvider extends ComponentProviderAdapter {
 			}
 			else
 			{
+				loadedProgramIndex = 0;
 				bi[0] = new BinExport2File(be0);
 				bi[1] = new BinExport2File(be1);
 			}
