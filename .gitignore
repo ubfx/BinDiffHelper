@@ -7,3 +7,4 @@ src/main/java/com/
 .project
 .classpath
 .settings
+.gradle/
