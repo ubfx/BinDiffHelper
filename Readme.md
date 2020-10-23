@@ -3,6 +3,8 @@
 Ghidra extension that uses BinDiff on your Ghidra project to find matching functions and rename them automatically (BinDiff 6 supported).
 Check out the [BinDiff manual](https://www.zynamics.com/bindiff/manual/) to see how it works and how it matches functions / basic blocks. However, with this extension, BinDiff is automated from within Ghidra, so you don't have to diff your binaries yourself.
 
+**Please report bugs via the issue feature on github**
+
 ## What it does / Changelog
 
 ### v0.1
