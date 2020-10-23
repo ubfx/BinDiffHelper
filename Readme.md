@@ -24,6 +24,10 @@ Check out the [BinDiff manual](https://www.zynamics.com/bindiff/manual/) to see 
 ### v0.3.1
 * Fixed a crash when opening a file via the "from project" option
 
+### v0.3.2
+* Fixed a bug where diffing with a different file from same project didn't work
+* Fixed a bug where files with short names (< 3 characters>) could not be diffed
+
 ### Next releases
 * Import function names and function parameters (type and name)
 * Compare the binary opened in Ghidra with an external .BinExport (from IDA for example)
