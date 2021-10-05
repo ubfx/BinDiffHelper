@@ -39,7 +39,7 @@ public class GeneralOpenDialog extends DialogComponentProvider {
 		panel.add(l);
 		
 		JPanel projectPanel;
-		if (plugin.provider.hasExporter && plugin.binDiff6Binary != null) {
+		if (plugin.provider.hasExporter && plugin.binDiffBinary != null) {
 			tp = new ProjectDataTreePanel(null);
 			tp.setProjectData(AppInfo.getActiveProject().getName(), AppInfo.getActiveProject().getProjectData());
 			
@@ -49,7 +49,7 @@ public class GeneralOpenDialog extends DialogComponentProvider {
 		}
 		else {
 			projectPanel = new JPanel();
-			projectPanel.add(new JLabel("<html><p style='width:300px;'>BinDiff6 binary not selected or BinExport "
+			projectPanel.add(new JLabel("<html><p style='width:300px;'>BinDiff binary not selected or BinExport "
 					+ "plugin not detected so this feature is not available. Check the settings menu.</p></html>"));
 		}
 		

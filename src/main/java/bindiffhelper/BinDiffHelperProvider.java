@@ -117,9 +117,9 @@ public class BinDiffHelperProvider extends ComponentProviderAdapter {
 					"to the BinExport as binaries or in source.");
 		}
 		
-		if (plugin.binDiff6Binary == null) {
+		if (plugin.binDiffBinary == null) {
 			warnings.add("BinDiff binary has not been set so some features are disabled.<br />" +
-					"Go to the settings button and select the BinDiff6 binary if you want to connect with BinDiff directly<br />" +
+					"Go to the settings button and select the BinDiff binary if you want to connect with BinDiff directly<br />" +
 					"You can download BinDiff from https://zynamics.com/software.html");
 		}
 		
@@ -188,7 +188,7 @@ public class BinDiffHelperProvider extends ComponentProviderAdapter {
 		}
 	}
 	
-	protected boolean isBinDiff6(Connection c) throws Exception
+	protected boolean isBinDiff6or7(Connection c) throws Exception
 	{
 		boolean ret = true;
 		
@@ -250,7 +250,7 @@ public class BinDiffHelperProvider extends ComponentProviderAdapter {
 			
 			conn = DriverManager.getConnection("jdbc:sqlite:" + filename);
 			
-			if (!isBinDiff6(conn)) {
+			if (!isBinDiff6or7(conn)) {
 				Msg.showError(this, this.getComponent(), "Error", "Can't open this file as a BinDiff 6/7 file");
 				
 				return;

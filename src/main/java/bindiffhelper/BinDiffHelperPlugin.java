@@ -60,7 +60,7 @@ public class BinDiffHelperPlugin extends ProgramPlugin {
 
 	BinDiffHelperProvider provider;
 	Exporter binExportExporter;
-	String binDiff6Binary;
+	String binDiffBinary;
 	
 	Program program;
 	
@@ -93,7 +93,7 @@ public class BinDiffHelperPlugin extends ProgramPlugin {
 		}
 		
 		try {
-			updateBinDiff6Binary();
+			updateBinDiffBinary();
 		} catch (Exception e) {
 			
 		}
@@ -135,7 +135,7 @@ public class BinDiffHelperPlugin extends ProgramPlugin {
 	
 	public File[] callBinDiff(DomainFile df)
 	{
-		if (binDiff6Binary == null) {
+		if (binDiffBinary == null) {
 			
 			Msg.showError(this, null, "Error", "Unexpected error, no binDiffBinary found");
 			return null;
@@ -159,9 +159,9 @@ public class BinDiffHelperPlugin extends ProgramPlugin {
 		
 		String outputDir = pri.getParentFile().getAbsolutePath();
 		
-		String[] cmd = {binDiff6Binary, pri.getAbsolutePath(), sec.getAbsolutePath(), "--output_dir", outputDir};
+		String[] cmd = {binDiffBinary, pri.getAbsolutePath(), sec.getAbsolutePath(), "--output_dir", outputDir};
 		
-		Msg.debug(this, "bd6: " + binDiff6Binary + "\nfiles:" + pri.getAbsolutePath() + "," + sec.getAbsolutePath() + "\n"+
+		Msg.debug(this, "bd6: " + binDiffBinary + "\nfiles:" + pri.getAbsolutePath() + "," + sec.getAbsolutePath() + "\n"+
 				"output dir: " + outputDir);
 		Msg.debug(this, "printing BD6 output for cmd: " + Arrays.toString(cmd));
 		Process p = null;
@@ -226,10 +226,10 @@ public class BinDiffHelperPlugin extends ProgramPlugin {
 		return ret;
 	}
 	
-	public boolean updateBinDiff6Binary() throws IOException
+	public boolean updateBinDiffBinary() throws IOException
 	{
 		String bin = Preferences.getProperty(BDBINPROPERTY);
-		binDiff6Binary = null;
+		binDiffBinary = null;
 		
 		if (bin == null || bin.isEmpty()) {
 			return false;
@@ -259,7 +259,7 @@ public class BinDiffHelperPlugin extends ProgramPlugin {
 			throw new IOException("Couldn't run this file. Doesn't seem to be the correct BinDiff 6/7 binary");			
 		}
 		
-		binDiff6Binary = bin;
+		binDiffBinary = bin;
 		
 		return true;		
 	}

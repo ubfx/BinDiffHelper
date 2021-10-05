@@ -29,7 +29,7 @@ public class SettingsDialog extends DialogComponentProvider {
 		panel.add(label, BorderLayout.NORTH);
 		
 		fileChooserPanel = new GhidraFileChooserPanel("BinDiff", BinDiffHelperPlugin.BDBINPROPERTY,
-				plugin.binDiff6Binary, true, GhidraFileChooserPanel.INPUT_MODE);
+				plugin.binDiffBinary, true, GhidraFileChooserPanel.INPUT_MODE);
 		fileChooserPanel.setVisible(true);
 		
 		fileChooserPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
@@ -52,7 +52,7 @@ public class SettingsDialog extends DialogComponentProvider {
 		close();
 		
 		try {
-			plugin.updateBinDiff6Binary();
+			plugin.updateBinDiffBinary();
 		} catch (IOException e) {
 			Msg.showError(this, getComponent(), "Error", e.toString());
 		}
