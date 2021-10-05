@@ -1,19 +1,21 @@
 # BinDiffHelper
 
-Ghidra extension that uses BinDiff on your Ghidra project to find matching functions and rename them automatically (BinDiff 6 supported).
+Ghidra extension that uses BinDiff on your Ghidra project to find matching functions and rename them automatically (BinDiff 6 + 7 supported).
 Check out the [BinDiff manual](https://www.zynamics.com/bindiff/manual/) to see how it works and how it matches functions / basic blocks. However, with this extension, BinDiff is automated from within Ghidra, so you don't have to diff your binaries yourself.
 
 **Please report bugs via the issue feature on github**
 
 ## What it does / Changelog
 
-### v0.1
-* BinDiff the binary opened in Ghidra with another binary from the same Ghidra project, show results and import function names
-* Open a BinDiff file, created with BinDiff 6, from two .BinExport files and import the matching function names in Ghidra
+### v0.4.0
+* Support BinDiff 7 and Ghidra 10
 
-### v0.2
-* Fix a bug where the file to import to needed to be checked out.
-* Increase size of project file selection dialog
+### v0.3.2
+* Fixed a bug where diffing with a different file from same project didn't work
+* Fixed a bug where files with short names (< 3 characters>) could not be diffed
+
+### v0.3.1
+* Fixed a crash when opening a file via the "from project" option
 
 ### v0.3
 * Coloring matched functions in the listing
@@ -21,12 +23,13 @@ Check out the [BinDiff manual](https://www.zynamics.com/bindiff/manual/) to see 
 * Fixed a bug where protobuf library was missing in some builds
 * New file load menu
 
-### v0.3.1
-* Fixed a crash when opening a file via the "from project" option
+### v0.2
+* Fix a bug where the file to import to needed to be checked out.
+* Increase size of project file selection dialog
 
-### v0.3.2
-* Fixed a bug where diffing with a different file from same project didn't work
-* Fixed a bug where files with short names (< 3 characters>) could not be diffed
+### v0.1
+* BinDiff the binary opened in Ghidra with another binary from the same Ghidra project, show results and import function names
+* Open a BinDiff file, created with BinDiff 6, from two .BinExport files and import the matching function names in Ghidra
 
 ### Next releases
 * Import function names and function parameters (type and name)
@@ -42,7 +45,7 @@ Close the plugin manager. Restart Ghidra to load the new plugin.
 
 ## Recommended other tools
 * BinExport plugin [binaries](https://github.com/google/binexport/releases) or compiled from [source](https://github.com/google/binexport/tree/master/java/BinExport) for your specific Ghidra version
-* BinDiff 6 (https://zynamics.com/software.html)
+* BinDiff (https://zynamics.com/software.html)
 
 Without these, you will only be able to import .BinDiff files and not automatically export and diff from your Ghidra project
 
