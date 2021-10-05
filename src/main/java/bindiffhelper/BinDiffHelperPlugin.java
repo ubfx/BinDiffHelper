@@ -51,8 +51,8 @@ import ghidra.util.task.TaskMonitor;
 	status = PluginStatus.STABLE,
 	packageName = ExamplesPluginPackage.NAME,
 	category = PluginCategoryNames.ANALYSIS,
-	shortDescription = "This plugin helps importing function names using BinDiff 6",
-	description = "This plugin helps importing function names using BinDiff 6",
+	shortDescription = "This plugin helps importing function names using BinDiff 6/7",
+	description = "This plugin helps importing function names using BinDiff 6/7",
 	servicesRequired = { CodeViewerService.class }
 )
 //@formatter:on
@@ -64,7 +64,7 @@ public class BinDiffHelperPlugin extends ProgramPlugin {
 	
 	Program program;
 	
-	public final static String BD6BINPROPERTY = "de.ubfx.bindiffhelper.bindiff6binary";
+	public final static String BDBINPROPERTY = "de.ubfx.bindiffhelper.bindiffbinary";
 	/**
 	 * Plugin constructor.
 	 * 
@@ -155,7 +155,7 @@ public class BinDiffHelperPlugin extends ProgramPlugin {
 		final var pri = binExportDomainFile(program.getDomainFile());
 		d.incrementProgress(1);
 		
-		d.setMessage("Executing BinDiff 6");
+		d.setMessage("Executing BinDiff");
 		
 		String outputDir = pri.getParentFile().getAbsolutePath();
 		
@@ -228,7 +228,7 @@ public class BinDiffHelperPlugin extends ProgramPlugin {
 	
 	public boolean updateBinDiff6Binary() throws IOException
 	{
-		String bin = Preferences.getProperty(BD6BINPROPERTY);
+		String bin = Preferences.getProperty(BDBINPROPERTY);
 		binDiff6Binary = null;
 		
 		if (bin == null || bin.isEmpty()) {
@@ -249,14 +249,14 @@ public class BinDiffHelperPlugin extends ProgramPlugin {
 			p.waitFor();
 			
 			
-			if (!outp.startsWith("BinDiff 6"))
+			if (!outp.startsWith("BinDiff 6") && !outp.startsWith("BinDiff 7"))
 			{
-				throw new IOException("This does not seem to be a BinDiff 6 binary");
+				throw new IOException("This does not seem to be a BinDiff 6/7 binary");
 			}
 			
 			
 		} catch (Exception e) {
-			throw new IOException("Couldn't run this file. Doesn't seem to be the correct BinDiff 6 binary");			
+			throw new IOException("Couldn't run this file. Doesn't seem to be the correct BinDiff 6/7 binary");			
 		}
 		
 		binDiff6Binary = bin;

@@ -25,10 +25,10 @@ public class SettingsDialog extends DialogComponentProvider {
 		JPanel panel = new JPanel(new BorderLayout());
 		panel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
 		
-		JLabel label = new JLabel("Select the BinDiff 6 binary");
+		JLabel label = new JLabel("Select the BinDiff 6/7 binary");
 		panel.add(label, BorderLayout.NORTH);
 		
-		fileChooserPanel = new GhidraFileChooserPanel("BinDiff 6", BinDiffHelperPlugin.BD6BINPROPERTY,
+		fileChooserPanel = new GhidraFileChooserPanel("BinDiff", BinDiffHelperPlugin.BDBINPROPERTY,
 				plugin.binDiff6Binary, true, GhidraFileChooserPanel.INPUT_MODE);
 		fileChooserPanel.setVisible(true);
 		

@@ -118,9 +118,9 @@ public class BinDiffHelperProvider extends ComponentProviderAdapter {
 		}
 		
 		if (plugin.binDiff6Binary == null) {
-			warnings.add("BinDiff6 binary has not been set so some features are disabled.<br />" +
-					"Go to the settings button and select the BinDiff6 binary if you want to connect with BinDiff6 directly<br />" +
-					"You can download BinDiff 6 from https://zynamics.com/software.html");
+			warnings.add("BinDiff binary has not been set so some features are disabled.<br />" +
+					"Go to the settings button and select the BinDiff6 binary if you want to connect with BinDiff directly<br />" +
+					"You can download BinDiff from https://zynamics.com/software.html");
 		}
 		
 		if (!warnings.isEmpty()) {
@@ -195,7 +195,7 @@ public class BinDiffHelperProvider extends ComponentProviderAdapter {
 		Statement stmt = conn.createStatement();
 		ResultSet rs = stmt.executeQuery("SELECT version from metadata");
 		
-		if (!rs.getString(1).startsWith("BinDiff 6")) {
+		if (!rs.getString(1).startsWith("BinDiff 6") && !rs.getString(1).startsWith("BinDiff 7")) {
 			ret = false;
 		}
 		
@@ -251,7 +251,7 @@ public class BinDiffHelperProvider extends ComponentProviderAdapter {
 			conn = DriverManager.getConnection("jdbc:sqlite:" + filename);
 			
 			if (!isBinDiff6(conn)) {
-				Msg.showError(this, this.getComponent(), "Error", "Can't open this file as a BinDiff 6 file");
+				Msg.showError(this, this.getComponent(), "Error", "Can't open this file as a BinDiff 6/7 file");
 				
 				return;
 			}
