@@ -88,7 +88,7 @@ Requirements:
 * gradle (tested with 5.0 and 6.2.2)
 
 ### Build it
-You need to set the **GHIDRA_INSTALLATION_DIR** environment variable to the Ghidra installation dir.
+You need to set the **GHIDRA_INSTALL_DIR** environment variable to the Ghidra installation dir.
 If you have different JDKs installed, make sure the environment variable **JAVA_HOME** points to the one your Ghidra installation uses.
 
 The extension will be built for that Ghidra version specifically.
