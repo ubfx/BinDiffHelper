@@ -36,6 +36,7 @@ protobuf {
     }
 }
 
+/*
 task copyLib(type: Copy) {
     from ('lib/') {
         include '*sqlite*'
@@ -48,7 +49,7 @@ task copyLib(type: Copy) {
 jar {
     dependsOn copyLib
 }
-
+*/
 // Standard Ghidra extension Gradle code follows.
 //----------------------START "DO NOT MODIFY" SECTION------------------------------
 def ghidraInstallDir
