@@ -25,6 +25,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Consumer;
 
 import ghidra.app.ExamplesPluginPackage;
 import ghidra.app.plugin.PluginCategoryNames;
@@ -133,97 +134,101 @@ public class BinDiffHelperPlugin extends ProgramPlugin {
 		return out;
 	}
 	
-	public File[] callBinDiff(DomainFile df)
+	public void callBinDiff(DomainFile df, Consumer<File[]> callback)
 	{
 		if (binDiffBinary == null) {
 			
 			Msg.showError(this, null, "Error", "Unexpected error, no binDiffBinary found");
-			return null;
+			callback.accept(null);
+			return;
 		}
-		
-		File[] ret = null;
-		
 		TaskDialog d = new TaskDialog("Exporting", true, false, true);
 		d.setMaximum(5);
-		tool.showDialog(d);
-		
-		d.setMessage("Exporting primary file");
-		final var sec = binExportDomainFile(df);
-		d.incrementProgress(1);
-		
-		d.setMessage("Exporting secondary file");
-		final var pri = binExportDomainFile(program.getDomainFile());
-		d.incrementProgress(1);
-		
-		d.setMessage("Executing BinDiff");
-		
-		String outputDir = pri.getParentFile().getAbsolutePath();
-		
-		String[] cmd = {binDiffBinary, pri.getAbsolutePath(), sec.getAbsolutePath(), "--output_dir", outputDir};
-		
-		Msg.debug(this, "bd6: " + binDiffBinary + "\nfiles:" + pri.getAbsolutePath() + "," + sec.getAbsolutePath() + "\n"+
-				"output dir: " + outputDir);
-		Msg.debug(this, "printing BD6 output for cmd: " + Arrays.toString(cmd));
-		Process p = null;
-		try {
-			p = Runtime.getRuntime().exec(cmd);
-			var i = new BufferedReader(new InputStreamReader(p.getInputStream()));
+
+		new Thread(() -> {
+			File[] ret = null;
 			
-			while (!p.waitFor(1, TimeUnit.SECONDS)) {
-				while (true)
-				{
-					String line = i.readLine();
+			d.setMessage("Exporting primary file");
+			final var sec = binExportDomainFile(df);
+			d.incrementProgress(1);
+			
+			d.setMessage("Exporting secondary file");
+			final var pri = binExportDomainFile(program.getDomainFile());
+			d.incrementProgress(1);
+			
+			d.setMessage("Executing BinDiff");
+			
+			String outputDir = pri.getParentFile().getAbsolutePath();
+			
+			String[] cmd = {binDiffBinary, pri.getAbsolutePath(), sec.getAbsolutePath(), "--output_dir", outputDir};
+			
+			Msg.debug(this, "bd6: " + binDiffBinary + "\nfiles:" + pri.getAbsolutePath() + "," + sec.getAbsolutePath() + "\n"+
+					"output dir: " + outputDir);
+			Msg.debug(this, "printing BD6 output for cmd: " + Arrays.toString(cmd));
+			Process p = null;
+			try {
+				p = Runtime.getRuntime().exec(cmd);
+				var i = new BufferedReader(new InputStreamReader(p.getInputStream()));
+				
+				while (!p.waitFor(1, TimeUnit.SECONDS)) {
+					while (true)
+					{
+						String line = i.readLine();
+						
+						if (line == null)
+							break;
+						
+						Msg.debug(this, ">" + line);
+					}
 					
-					if (line == null)
-						break;
-					
-					Msg.debug(this, ">" + line);
+					d.checkCanceled();
 				}
 				
-				d.checkCanceled();
+				Msg.debug(this, "end of output");
+				
+			} catch (IOException | InterruptedException e) {
+				Msg.showError(this, d.getComponent(), "Error", "Error when Exporting");
+				d.close();
+				callback.accept(null);
+				return;
+			} catch (CancelledException e) {
+				if (p != null) {
+					p.destroyForcibly();
+				}
+				d.close();
+				
+				callback.accept(null);
+				return;
 			}
 			
-			Msg.debug(this, "end of output");
+			d.incrementProgress(1);
+			d.setMessage("Looking for generated file");
 			
-		} catch (IOException | InterruptedException e) {
-			Msg.showError(this, d.getComponent(), "Error", "Error when Exporting");
-			d.close();
-			return null;
-		} catch (CancelledException e) {
-			if (p != null) {
-				p.destroyForcibly();
+			Path bindiff = FileSystems.getDefault().getPath(outputDir,
+					pri.getName().replace(".BinExport", "") + 
+					"_vs_" +
+					sec.getName().replace(".BinExport", "")
+					+ ".BinDiff");
+			
+			Msg.debug(this, "looking for bindiff at " + bindiff.toFile().getAbsolutePath());
+			
+			if (!bindiff.toFile().exists()) {
+				ret = null;
+				
+				Msg.showError(this, d.getComponent(), "Error", "Error when trying to find generated BinDiff file");
 			}
+			else
+			{
+				ret = new File[] {pri, sec, bindiff.toFile()};
+			}
+			
+			d.incrementProgress(1);
 			d.close();
 			
-			return null;
-		}
-		
-		d.incrementProgress(1);
-		d.setMessage("Looking for generated file");
-		
-		Path bindiff = FileSystems.getDefault().getPath(outputDir,
-				pri.getName().replace(".BinExport", "") + 
-				"_vs_" +
-				sec.getName().replace(".BinExport", "")
-				+ ".BinDiff");
-		
-		Msg.debug(this, "looking for bindiff at " + bindiff.toFile().getAbsolutePath());
-		
-		if (!bindiff.toFile().exists()) {
-			ret = null;
 			
-			Msg.showError(this, d.getComponent(), "Error", "Error when trying to find generated BinDiff file");
-		}
-		else
-		{
-			ret = new File[] {pri, sec, bindiff.toFile()};
-		}
-		
-		d.incrementProgress(1);
-		d.close();
-		
-		
-		return ret;
+			callback.accept(ret);	
+		}).start();
+		tool.showDialog(d);
 	}
 	
 	public boolean updateBinDiffBinary() throws IOException
