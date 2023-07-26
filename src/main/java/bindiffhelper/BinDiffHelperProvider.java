@@ -70,7 +70,8 @@ public class BinDiffHelperProvider extends ComponentProviderAdapter {
 	protected Connection conn;
 	protected Program program;
 	
-	protected ImportFunctionNamesAction fna;
+	protected ImportSelectedFunctionNamesAction importSelectedAction;
+	protected ImportAllFunctionNamesAction importAllAction;
 	protected UpdatePlateCommentsAction upca;
 	protected UpdateFunctionColoringAction ufca;
 	
@@ -150,15 +151,18 @@ public class BinDiffHelperProvider extends ComponentProviderAdapter {
 		
 		addLocalAction(sa);
 		
-		fna = new ImportFunctionNamesAction(plugin);
-		fna.setEnabled(false);
+		importSelectedAction = new ImportSelectedFunctionNamesAction(plugin);
+		importSelectedAction.setEnabled(false);
+		importAllAction = new ImportAllFunctionNamesAction(plugin);
+		importAllAction.setEnabled(false);
 		upca = new UpdatePlateCommentsAction(plugin);
 		upca.setEnabled(false);
 		ufca = new UpdateFunctionColoringAction(plugin);
 		ufca.setEnabled(false);
 
 		addLocalAction(op);
-		addLocalAction(fna);
+		addLocalAction(importSelectedAction);
+		addLocalAction(importAllAction);
 		addLocalAction(upca);
 		addLocalAction(ufca);
 	}
@@ -430,8 +434,10 @@ public class BinDiffHelperProvider extends ComponentProviderAdapter {
 				}
 			});
 			
-			fna.setEntries(ctm.getEntries());
-			fna.setEnabled(true);
+			importSelectedAction.setEntries(ctm.getEntries());
+			importSelectedAction.setEnabled(true);
+			importAllAction.setEntries(ctm.getEntries());
+			importAllAction.setEnabled(true);
 			upca.setEntries(ctm.getEntries());
 			upca.setEnabled(true);
 			ufca.setEntries(ctm.getEntries());

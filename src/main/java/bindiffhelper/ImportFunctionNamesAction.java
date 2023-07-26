@@ -13,27 +13,24 @@ import ghidra.util.HTMLUtilities;
 import ghidra.util.Msg;
 import resources.ResourceManager;
 
-public class ImportFunctionNamesAction extends DockingAction {
+class ImportFunctionNamesAction extends DockingAction {
 	
 	protected BinDiffHelperPlugin plugin;
 	
 	List<ComparisonTableModel.Entry> entries;
 	
-	public ImportFunctionNamesAction(BinDiffHelperPlugin plugin)
+	public ImportFunctionNamesAction(String name, BinDiffHelperPlugin plugin)
 	{
-		super("Import selected function names", plugin.getName());
-		
-		this.setMenuBarData(new MenuData(new String[] { "Import", "Selected function names" }, "Import"));
-		
-		setToolBarData(new ToolBarData(ResourceManager.loadImage("images/table_go.png"), "Import"));
-
-		setDescription(HTMLUtilities.toHTML("Import selected function names"));
-		
+		super(name, plugin.getName());		
 		this.plugin = plugin;
 	}
 
 	public void setEntries(List<ComparisonTableModel.Entry> e) {
 		entries = e;
+	}
+	
+	protected boolean shouldImportEntry(ComparisonTableModel.Entry e) {
+		return false;
 	}
 	
 	@Override
@@ -43,7 +40,7 @@ public class ImportFunctionNamesAction extends DockingAction {
 		Map<String, Exception> changes = new HashMap<String, Exception>();
 		
 		for (var e : entries) {
-			if (!e.do_import)
+			if (!shouldImportEntry(e))
 				continue;
 			
 			Exception exp = null;
@@ -83,5 +80,39 @@ public class ImportFunctionNamesAction extends DockingAction {
 		plugin.provider.refresh();
 		Msg.showInfo(this, plugin.provider.getComponent(), "Renamed functions", html);
 	}
-	
 }
+
+class ImportSelectedFunctionNamesAction extends ImportFunctionNamesAction {
+	public ImportSelectedFunctionNamesAction(BinDiffHelperPlugin plugin) {
+		super("Import selected function names", plugin);
+		
+		this.setMenuBarData(new MenuData(new String[] { "Import", "Selected function names" }, "Import"));
+		
+		setToolBarData(new ToolBarData(ResourceManager.loadImage("images/table_go.png"), "Import"));
+
+		setDescription(HTMLUtilities.toHTML("Import selected function names"));
+	}
+	
+	@Override
+	protected boolean shouldImportEntry(ComparisonTableModel.Entry e) {
+		return e.do_import;
+	}
+}
+
+class ImportAllFunctionNamesAction extends ImportFunctionNamesAction {
+	public ImportAllFunctionNamesAction(BinDiffHelperPlugin plugin) {
+		super("Import all function names", plugin);
+		
+		this.setMenuBarData(new MenuData(new String[] { "Import", "All function names" }, "Import"));
+		
+		setToolBarData(new ToolBarData(ResourceManager.loadImage("images/table_lightning.png"), "Import"));
+
+		setDescription(HTMLUtilities.toHTML("Import all function names"));
+	}
+	
+	@Override
+	protected boolean shouldImportEntry(ComparisonTableModel.Entry e) {
+		return true;
+	}
+}
+
