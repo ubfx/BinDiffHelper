@@ -70,7 +70,7 @@ public class BinDiffHelperProvider extends ComponentProviderAdapter {
 	protected Connection conn;
 	protected Program program;
 	
-	protected ImportSelectedFunctionNamesAction importSelectedAction;
+	protected ImportCheckedFunctionNamesAction importCheckedAction;
 	protected ImportAllFunctionNamesAction importAllAction;
 	protected UpdatePlateCommentsAction upca;
 	protected UpdateFunctionColoringAction ufca;
@@ -151,8 +151,8 @@ public class BinDiffHelperProvider extends ComponentProviderAdapter {
 		
 		addLocalAction(sa);
 		
-		importSelectedAction = new ImportSelectedFunctionNamesAction(plugin);
-		importSelectedAction.setEnabled(false);
+		importCheckedAction = new ImportCheckedFunctionNamesAction(plugin);
+		importCheckedAction.setEnabled(false);
 		importAllAction = new ImportAllFunctionNamesAction(plugin);
 		importAllAction.setEnabled(false);
 		upca = new UpdatePlateCommentsAction(plugin);
@@ -161,7 +161,7 @@ public class BinDiffHelperProvider extends ComponentProviderAdapter {
 		ufca.setEnabled(false);
 
 		addLocalAction(op);
-		addLocalAction(importSelectedAction);
+		addLocalAction(importCheckedAction);
 		addLocalAction(importAllAction);
 		addLocalAction(upca);
 		addLocalAction(ufca);
@@ -434,8 +434,8 @@ public class BinDiffHelperProvider extends ComponentProviderAdapter {
 				}
 			});
 			
-			importSelectedAction.setEntries(ctm.getEntries());
-			importSelectedAction.setEnabled(true);
+			importCheckedAction.setEntries(ctm.getEntries());
+			importCheckedAction.setEnabled(true);
 			importAllAction.setEntries(ctm.getEntries());
 			importAllAction.setEnabled(true);
 			upca.setEntries(ctm.getEntries());

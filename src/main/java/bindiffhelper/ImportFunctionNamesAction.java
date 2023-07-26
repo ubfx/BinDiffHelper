@@ -82,15 +82,15 @@ class ImportFunctionNamesAction extends DockingAction {
 	}
 }
 
-class ImportSelectedFunctionNamesAction extends ImportFunctionNamesAction {
-	public ImportSelectedFunctionNamesAction(BinDiffHelperPlugin plugin) {
+class ImportCheckedFunctionNamesAction extends ImportFunctionNamesAction {
+	public ImportCheckedFunctionNamesAction(BinDiffHelperPlugin plugin) {
 		super("Import selected function names", plugin);
 		
-		this.setMenuBarData(new MenuData(new String[] { "Import", "Selected function names" }, "Import"));
+		this.setMenuBarData(new MenuData(new String[] { "Import", "Checked functions' names" }, "Import"));
 		
 		setToolBarData(new ToolBarData(ResourceManager.loadImage("images/table_go.png"), "Import"));
 
-		setDescription(HTMLUtilities.toHTML("Import selected function names"));
+		setDescription(HTMLUtilities.toHTML("Import checked functions' names"));
 	}
 	
 	@Override
@@ -103,7 +103,7 @@ class ImportAllFunctionNamesAction extends ImportFunctionNamesAction {
 	public ImportAllFunctionNamesAction(BinDiffHelperPlugin plugin) {
 		super("Import all function names", plugin);
 		
-		this.setMenuBarData(new MenuData(new String[] { "Import", "All function names" }, "Import"));
+		this.setMenuBarData(new MenuData(new String[] { "Import", "All functions' names" }, "Import"));
 		
 		setToolBarData(new ToolBarData(ResourceManager.loadImage("images/table_lightning.png"), "Import"));
 
