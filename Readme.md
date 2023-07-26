@@ -8,6 +8,8 @@ Check out the [BinDiff manual](https://www.zynamics.com/bindiff/manual/) to see 
 ## What it does / Changelog
 
 ### v0.4.2
+* Add function to import all functions (not just the ones checked in the table)
+* Add function to toggle the checkbox for multiple elements in the table
 * Update to support Ghidra 10.3
 
 ### v0.4.1
@@ -45,9 +47,11 @@ Check out the [BinDiff manual](https://www.zynamics.com/bindiff/manual/) to see 
 ## How to Install
 Either download the .zip-File from the [release](https://github.com/ubfx/BinDiffHelper/releases), if it's compatible to your Ghidra version, otherwise see *How to build* below.
 
-Open Ghidra, go to **File->Install Extensions...** in the **Main Window**. Click the +-Button in the top right and select the BinDiffHelper zip file.
-
-Close the plugin manager. Restart Ghidra to load the new plugin.
+1. Open Ghidra
+1. In the **Main Window**: Go to **File->Install Extensions...**
+1. Click the +-Button in the top right and select the BinDiffHelper zip file
+1. Close the plugin manager. Restart Ghidra to load the new plugin
+1. See *Usage* below
 
 ## Recommended other tools
 * BinExport plugin [binaries](https://github.com/google/binexport/releases) or compiled from [source](https://github.com/google/binexport/tree/master/java/BinExport) for your specific Ghidra version
@@ -108,6 +112,21 @@ gradle
 There should have been a .zip-File created in the dist directory.
 
 Use that .zip File to install according to the instructions above.
+
+## Development / Debugging setup
+Sometimes it's useful to be able to debug the extension together with Ghidra, here are some notes on that:
+
+1. Clone and build Ghidra and let gradle create eclipse projects according to the DevGuide
+1. Import the projects into eclipse (make sure it has relevant plugins for extension development)
+1. Build and install GhidraDev
+1. Unpack the Ghidra build and link GhidraDev to it. Maybe have to set GHIDRA_INSTALL_DIR environment variable
+1. Run Ghidra from eclipse and install BinExport extension
+1. Create BinDiffHelper eclipse project with `gradle build eclipse`
+1. Import it into eclipse and use GhidraDev to link it to the Ghidra build
+1. Debug As->Ghidra
+
+When debugging Ghidra with the extension out of eclipse, the extension is loaded into Ghidra automatically (don't go through the usual extension install). However, the plugin has to be enabled in the Code Explorer.
+
 
 
 ## References
