@@ -70,6 +70,7 @@ public class BinDiffHelperProvider extends ComponentProviderAdapter {
 	protected Connection conn;
 	protected Program program;
 	
+	protected ToggleCheckSelectedAction toggleCheckedAction;
 	protected ImportCheckedFunctionNamesAction importCheckedAction;
 	protected ImportAllFunctionNamesAction importAllAction;
 	protected UpdatePlateCommentsAction upca;
@@ -151,6 +152,7 @@ public class BinDiffHelperProvider extends ComponentProviderAdapter {
 		
 		addLocalAction(sa);
 		
+		toggleCheckedAction = new ToggleCheckSelectedAction(plugin);
 		importCheckedAction = new ImportCheckedFunctionNamesAction(plugin);
 		importCheckedAction.setEnabled(false);
 		importAllAction = new ImportAllFunctionNamesAction(plugin);
@@ -161,6 +163,7 @@ public class BinDiffHelperProvider extends ComponentProviderAdapter {
 		ufca.setEnabled(false);
 
 		addLocalAction(op);
+		addLocalAction(toggleCheckedAction);
 		addLocalAction(importCheckedAction);
 		addLocalAction(importAllAction);
 		addLocalAction(upca);
