@@ -15,7 +15,7 @@ public class UpdatePlateCommentsAction extends DockingAction {
 	
 	public UpdatePlateCommentsAction(BinDiffHelperPlugin plugin) {
 		super("Create plate comments", plugin.getName());
-		this.setMenuBarData(new MenuData(new String[] {"update", "Plate Comments"}));
+		this.setMenuBarData(new MenuData(new String[] {"Update", "Plate Comments"}));
 		setToolBarData(new ToolBarData(ResourceManager.loadImage("images/comment.png"), "Update Plate Comments"));
 		setDescription(HTMLUtilities.toHTML("Set plate comments with similarity and links to other binary"));
 		this.plugin = plugin;

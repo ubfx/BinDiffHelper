@@ -22,7 +22,7 @@ public class UpdateFunctionColoringAction extends DockingAction {
 		
 	public UpdateFunctionColoringAction(BinDiffHelperPlugin plugin) {
 		super("Colorize functions based on similarity", plugin.getName());
-		this.setMenuBarData(new MenuData(new String[] {"update", "Function Colors"}));
+		this.setMenuBarData(new MenuData(new String[] {"Update", "Function Colors"}));
 		setToolBarData(new ToolBarData(ResourceManager.loadImage("images/color.png"), "Colorize Similar Functions"));
 		setDescription(HTMLUtilities.toHTML("Colorize functions that are similar according to bindiff"));
 		this.plugin = plugin;
