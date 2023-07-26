@@ -7,6 +7,9 @@ Check out the [BinDiff manual](https://www.zynamics.com/bindiff/manual/) to see 
 
 ## What it does / Changelog
 
+### v0.4.2
+* Update to support Ghidra 10.3
+
 ### v0.4.1
 * Update to support Gradle 7.5 and Ghidra 10.1
 
