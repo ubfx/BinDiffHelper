@@ -27,7 +27,7 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
-import ghidra.app.ExamplesPluginPackage;
+import ghidra.MiscellaneousPluginPackage;
 import ghidra.app.plugin.PluginCategoryNames;
 import ghidra.app.plugin.ProgramPlugin;
 import ghidra.app.services.CodeViewerService;
@@ -50,7 +50,7 @@ import ghidra.util.task.TaskMonitor;
 //@formatter:off
 @PluginInfo(
 	status = PluginStatus.STABLE,
-	packageName = ExamplesPluginPackage.NAME,
+	packageName = MiscellaneousPluginPackage.NAME,
 	category = PluginCategoryNames.ANALYSIS,
 	shortDescription = "This plugin helps importing function names using BinDiff 6/7",
 	description = "This plugin helps importing function names using BinDiff 6/7",
@@ -72,7 +72,7 @@ public class BinDiffHelperPlugin extends ProgramPlugin {
 	 * @param tool The plugin tool that this plugin is added to.
 	 */
 	public BinDiffHelperPlugin(PluginTool tool) {
-		super(tool, true, true);
+		super(tool);
 
 		binExportExporter = null;
 		
