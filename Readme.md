@@ -7,6 +7,9 @@ Check out the [BinDiff manual](https://www.zynamics.com/bindiff/manual/) to see 
 
 ## What it does / Changelog
 
+### v0.4.3
+* Release for Ghidra 11.0
+  
 ### v0.4.2
 * Add function to import all functions (not just the ones checked in the table)
 * Add function to toggle the checkbox for multiple elements in the table
@@ -98,8 +101,8 @@ Requirements:
 * gradle (tested with 7.5)
 
 ### Build it
-You need to set the **GHIDRA_INSTALL_DIR** environment variable to the Ghidra installation dir.
-If you have different JDKs installed, make sure the environment variable **JAVA_HOME** points to the one your Ghidra installation uses.
+You need to set the `GHIDRA_INSTALL_DIR` environment variable to the Ghidra installation dir.
+If you have different JDKs installed, make sure the environment variable `JAVA_HOME` points to the one your Ghidra installation uses.
 
 The extension will be built for that Ghidra version specifically.
 
@@ -119,7 +122,7 @@ Sometimes it's useful to be able to debug the extension together with Ghidra, he
 1. Clone and build Ghidra and let gradle create eclipse projects according to the DevGuide
 1. Import the projects into eclipse (make sure it has relevant plugins for extension development)
 1. Build and install GhidraDev
-1. Unpack the Ghidra build and link GhidraDev to it. Maybe have to set GHIDRA_INSTALL_DIR environment variable
+1. Unpack the Ghidra build and link GhidraDev to it. Maybe have to set `GHIDRA_INSTALL_DIR` environment variable
 1. Run Ghidra from eclipse and install BinExport extension
 1. Create BinDiffHelper eclipse project with `gradle build eclipse`
 1. Import it into eclipse and use GhidraDev to link it to the Ghidra build
