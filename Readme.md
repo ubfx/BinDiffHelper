@@ -6,10 +6,13 @@ Check out the [BinDiff manual](https://www.zynamics.com/bindiff/manual/) to see 
 **Please report bugs via the issue feature on github**
 
 ## What it does / Changelog
+### v0.5
+* Support BinDiff 8
+* Release for Ghidra 11.1
 
 ### v0.4.3
 * Release for Ghidra 11.0
-  
+
 ### v0.4.2
 * Add function to import all functions (not just the ones checked in the table)
 * Add function to toggle the checkbox for multiple elements in the table
@@ -133,6 +136,7 @@ When debugging Ghidra with the extension out of eclipse, the extension is loaded
 
 
 ## References
+* https://github.com/google/bindiff/releases
 * https://www.zynamics.com/bindiff/manual/
 * https://github.com/google/binexport/
 

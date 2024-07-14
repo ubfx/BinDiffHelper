@@ -195,14 +195,14 @@ public class BinDiffHelperProvider extends ComponentProviderAdapter {
 		}
 	}
 	
-	protected boolean isBinDiff6or7(Connection c) throws Exception
+	protected boolean isMetadataVersionOK(Connection c) throws Exception
 	{
 		boolean ret = true;
 		
 		Statement stmt = conn.createStatement();
 		ResultSet rs = stmt.executeQuery("SELECT version from metadata");
 		
-		if (!rs.getString(1).startsWith("BinDiff 6") && !rs.getString(1).startsWith("BinDiff 7")) {
+		if (!rs.getString(1).startsWith("BinDiff 6") && !rs.getString(1).startsWith("BinDiff 7") && !rs.getString(1).startsWith("BinDiff 8")) {
 			ret = false;
 		}
 		
@@ -257,8 +257,8 @@ public class BinDiffHelperProvider extends ComponentProviderAdapter {
 			
 			conn = DriverManager.getConnection("jdbc:sqlite:" + filename);
 			
-			if (!isBinDiff6or7(conn)) {
-				Msg.showError(this, this.getComponent(), "Error", "Can't open this file as a BinDiff 6/7 file");
+			if (!isMetadataVersionOK(conn)) {
+				Msg.showError(this, this.getComponent(), "Error", "Can't open this file as a BinDiff 6/7/8 database.");
 				
 				return;
 			}

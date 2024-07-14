@@ -52,8 +52,8 @@ import ghidra.util.task.TaskMonitor;
 	status = PluginStatus.STABLE,
 	packageName = MiscellaneousPluginPackage.NAME,
 	category = PluginCategoryNames.ANALYSIS,
-	shortDescription = "This plugin helps importing function names using BinDiff 6/7",
-	description = "This plugin helps importing function names using BinDiff 6/7",
+	shortDescription = "This plugin helps importing function names using BinDiff 6/7/8",
+	description = "This plugin helps importing function names using BinDiff 6/7/8",
 	servicesRequired = { CodeViewerService.class }
 )
 //@formatter:on
@@ -254,14 +254,14 @@ public class BinDiffHelperPlugin extends ProgramPlugin {
 			p.waitFor();
 			
 			
-			if (!outp.startsWith("BinDiff 6") && !outp.startsWith("BinDiff 7"))
+			if (!outp.startsWith("BinDiff 6") && !outp.startsWith("BinDiff 7") && !outp.startsWith("BinDiff 8"))
 			{
-				throw new IOException("This does not seem to be a BinDiff 6/7 binary");
+				throw new IOException("This does not seem to be a BinDiff 6/7/8 binary");
 			}
 			
 			
 		} catch (Exception e) {
-			throw new IOException("Couldn't run this file. Doesn't seem to be the correct BinDiff 6/7 binary");			
+			throw new IOException("Error running the file: " + e);			
 		}
 		
 		binDiffBinary = bin;
