@@ -20,6 +20,7 @@ import java.awt.Dimension;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.io.File;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.sql.Connection;
@@ -44,17 +45,22 @@ import docking.action.DockingAction;
 import docking.action.MenuData;
 import docking.action.ToolBarData;
 import docking.widgets.table.GTable;
+import ghidra.app.decompiler.DecompInterface;
+import ghidra.app.decompiler.DecompileResults;
 import ghidra.app.services.CodeViewerService;
 import ghidra.framework.cmd.Command;
 import ghidra.framework.model.DomainFile;
+import ghidra.framework.model.Project;
 import ghidra.framework.plugintool.ComponentProviderAdapter;
 import ghidra.program.model.address.Address;
 import ghidra.program.model.address.AddressSpace;
+import ghidra.program.model.listing.Function;
 import ghidra.program.model.listing.Program;
 import ghidra.program.model.symbol.Symbol;
 import ghidra.program.util.ProgramLocation;
 import ghidra.util.HTMLUtilities;
 import ghidra.util.Msg;
+import ghidra.util.task.TaskMonitor;
 import resources.ResourceManager;
 
 public class BinDiffHelperProvider extends ComponentProviderAdapter {
@@ -316,7 +322,17 @@ public class BinDiffHelperProvider extends ComponentProviderAdapter {
 				bi[0] = new BinExport2File(be0);
 				bi[1] = new BinExport2File(be1);
 			}
-			
+
+			Program2Dialog p2d = new Program2Dialog(plugin);
+			tool.showDialog(p2d);
+
+			Program program2 = p2d.getDomainFile() != null ? p2d.openProgram() : null;
+			CodeViewerService cvs2 = program2 != null ? p2d.getCodeViewerService() : null;
+			String pname2 = program2 != null ? p2d.getDomainFile().getName().toString() : null;
+
+			Project project = plugin.getTool().getProject();
+			Path projectPath = project.getProjectLocator().getProjectDir().toPath();
+
 			Statement stmt = conn.createStatement();
 			ResultSet rs = stmt.executeQuery( "SELECT address1, address2, similarity, confidence, name "
 					+ "FROM function JOIN functionalgorithm ON function.algorithm=functionalgorithm.id "
@@ -336,6 +352,7 @@ public class BinDiffHelperProvider extends ComponentProviderAdapter {
 			}
 			
 			AddressSpace addrSpace = program.getAddressFactory().getDefaultAddressSpace();
+			AddressSpace addrSpace2 = program2 != null ? program2.getAddressFactory().getDefaultAddressSpace() : null;
 			
 			Set<Long> priFnSet = bi[0].getFunctionAddressSet();
 			Set<Long> commonPriFnSet = new TreeSet<Long>();
@@ -433,8 +450,40 @@ public class BinDiffHelperProvider extends ComponentProviderAdapter {
 					{
 						var entry = ctm.getEntry(table.getSelectedRow());
 						cvs.goTo(new ProgramLocation(program, entry.primaryAddress), true);
+						if (program2 != null)
+						{
+							Address secAddress = addrSpace2.getAddress(entry.secondaryAddress);
+							cvs2.goTo(new ProgramLocation(program2, secAddress), true);
+						}
 					}
-				}
+					if (program2 != null && e.getClickCount() == 3 && table.getSelectedRow() != -1)
+					{
+						var entry = ctm.getEntry(table.getSelectedRow());
+						try {
+							Function function = program.getListing().getFunctionAt(entry.primaryAddress);
+							Address secAddress = addrSpace2.getAddress(entry.secondaryAddress);
+							Function function2 = program2.getListing().getFunctionAt(secAddress);
+
+							String decompiledCode1 = decompileFunction(function, program);
+							String decompiledCode2 = decompileFunction(function2, program2);
+
+							Path path1 = projectPath.resolve("decompiled").resolve(pname)
+								.resolve("0x" + Long.toHexString(entry.primaryAddress.getUnsignedOffset()) + ".c");
+							Path path2 = projectPath.resolve("decompiled").resolve(pname2)
+								.resolve("0x" + Long.toHexString(secAddress.getUnsignedOffset()) + ".c");
+
+							writeToFile(path1, decompiledCode1);
+							writeToFile(path2, decompiledCode2);
+
+							String command = plugin.diffCommand
+								.replace("$file1", path1.toString())
+								.replace("$file2", path2.toString());
+							Runtime.getRuntime().exec(command);
+						} catch (Exception ex) {
+							Msg.showError(this, getComponent(), "Error", ex.getMessage());
+						}
+					}
+				}	
 			});
 			
 			importCheckedAction.setEntries(ctm.getEntries());
@@ -451,6 +500,34 @@ public class BinDiffHelperProvider extends ComponentProviderAdapter {
 			Msg.showError(this, this.getComponent(), "Error: ", e.toString());
 			return;
 		}		
+	}
+
+	protected String decompileFunction(Function function, Program program) {
+		DecompInterface decompiler = new DecompInterface();
+		try {
+			decompiler.openProgram(program);
+			DecompileResults results = decompiler.decompileFunction(function, 0, TaskMonitor.DUMMY);
+			if (results != null && results.decompileCompleted()) {
+				String decompiledCode = results.getDecompiledFunction().getC();
+				return decompiledCode;
+			} else {
+				throw new Exception("Failed to decompile function: " + function.getName());
+			}
+		} catch (Exception e) {
+			throw new Error("Error during decompilation: " + e.getMessage());
+		} finally {
+			decompiler.dispose();
+		}
+	}
+
+	protected void writeToFile(Path path, String content) {
+		try {
+			Path parent = path.getParent();
+			if (parent != null) Files.createDirectories(parent);
+			Files.write(path, content.getBytes());
+		} catch (Exception e) {
+			Msg.showError(this, this.getComponent(), "Error: ", e.toString());
+		}
 	}
 	
 	public class GeneralOpenAction extends DockingAction {

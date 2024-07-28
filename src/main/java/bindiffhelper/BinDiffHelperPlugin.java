@@ -62,10 +62,13 @@ public class BinDiffHelperPlugin extends ProgramPlugin {
 	BinDiffHelperProvider provider;
 	Exporter binExportExporter;
 	String binDiffBinary;
+	String diffCommand;
+	protected String defaultDiffCommand;
 	
 	Program program;
 	
 	public final static String BDBINPROPERTY = "de.ubfx.bindiffhelper.bindiffbinary";
+	public final static String DIFFCOMMAND = "de.ubfx.bindiffhelper.diffCommand";
 	/**
 	 * Plugin constructor.
 	 * 
@@ -98,6 +101,15 @@ public class BinDiffHelperPlugin extends ProgramPlugin {
 		} catch (Exception e) {
 			
 		}
+
+		if (System.getProperty("os.name").toLowerCase().contains("win")) {
+			defaultDiffCommand = "notepad++ -multiInst -nosession -lc -pluginMessage=compare \"$file1\" \"$file2\"";
+		}
+		if (System.getProperty("os.name").toLowerCase().contains("nix")) {
+			defaultDiffCommand = "x-terminal-emulator -e 'diff -u \"$file1\" \"$file2\"'";
+		}
+
+		diffCommand = Preferences.getProperty(DIFFCOMMAND, defaultDiffCommand);
 		
 		provider = new BinDiffHelperProvider(this, this.getCurrentProgram());
 		provider.setTitle("BinDiffHelper");
@@ -243,7 +255,7 @@ public class BinDiffHelperPlugin extends ProgramPlugin {
 		File f = new File(bin);
 		if (!f.exists() || !f.canExecute())
 		{
-			throw new IOException("File does not exist or is not executable");
+			throw new IOException("BinDiffBinary: File does not exist or is not executable");
 		}
 		
 		String[] cmd = {bin, ""};
@@ -256,12 +268,12 @@ public class BinDiffHelperPlugin extends ProgramPlugin {
 			
 			if (!outp.startsWith("BinDiff 6") && !outp.startsWith("BinDiff 7") && !outp.startsWith("BinDiff 8"))
 			{
-				throw new IOException("This does not seem to be a BinDiff 6/7/8 binary");
+				throw new IOException("BinDiffBinary: This does not seem to be a BinDiff 6/7/8 binary");
 			}
 			
 			
 		} catch (Exception e) {
-			throw new IOException("Error running the file: " + e);			
+			throw new IOException("BinDiffBinary: Error running the file: " + e);			
 		}
 		
 		binDiffBinary = bin;
@@ -269,6 +281,12 @@ public class BinDiffHelperPlugin extends ProgramPlugin {
 		return true;		
 	}
 	
+	public void updateDiffCommand(String cmd)
+	{
+		diffCommand = cmd == null || cmd.isEmpty() ? defaultDiffCommand : cmd;
+		Preferences.setProperty(DIFFCOMMAND, cmd);
+	}
+
 	@Override
 	public void init() {
 		super.init();

@@ -97,6 +97,7 @@ public class GeneralOpenDialog extends DialogComponentProvider {
 	protected void okCallback() {
 		if (!extBDFilePanel.getFileName().isEmpty()) {
 			plugin.provider.openBinDiffDB(extBDFilePanel.getFileName());
+			close();
 		}
 		/*else if (!extBEFilePanel.getFileName().isEmpty()) {
 		
@@ -125,7 +126,6 @@ public class GeneralOpenDialog extends DialogComponentProvider {
 		}
 		else {
 			Msg.showError(this, getComponent(), "Error", "No valid selection");
-			close();
 		}
 	}
 }
