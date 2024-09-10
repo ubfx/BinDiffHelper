@@ -1,0 +1,66 @@
+name: Build
+on: [push, pull_request, workflow_dispatch]
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        ghidra:
+          - "11.1.2"
+          - "11.1.1"
+          - "11.1"
+          - "11.0.3"
+          - "11.0.2"
+          - "11.0.1"
+          - "11.0"
+
+    steps:
+    - name: Clone Repository
+      uses: actions/checkout@v4
+  
+    - name: Install Java
+      uses: actions/setup-java@v4
+      with:
+        distribution: 'temurin'
+        java-version: '21'
+
+    - name: Install Gradle
+      uses: gradle/actions/setup-gradle@v3
+      with:
+        gradle-version: "7.5"
+
+    - name: Install Ghidra ${{ matrix.ghidra }}
+      uses: antoniovazquezblanco/setup-ghidra@v2.0.4
+      with:
+        auth_token: ${{ secrets.GITHUB_TOKEN }}
+        version: ${{ matrix.ghidra }}
+
+    - name: Build
+      run: gradle buildExtension
+
+    - name: Upload artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: BinDiffHelper_Ghidra_${{ matrix.ghidra }}
+        path: dist/*.zip
+
+  release:
+    runs-on: "ubuntu-latest"
+    needs: build
+    if: contains(github.ref, 'refs/tags/v')
+
+    steps:
+    - name: Download binaries
+      uses: actions/download-artifact@v4
+
+    - name: Release stable
+      if: contains(github.ref, 'refs/tags/v')
+      uses: marvinpinto/action-automatic-releases@v1.2.1
+      with:
+        repo_token: "${{ secrets.GITHUB_TOKEN }}"
+        title: "BinDiffHelper ${{github.ref_name}}"
+        files: BinDiffHelper_Ghidra_*/*.zip
