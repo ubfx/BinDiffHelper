@@ -40,7 +40,7 @@ jobs:
         version: ${{ matrix.ghidra }}
 
     - name: Build
-      run: gradle buildExtension
+      run: gradle
 
     - name: Upload artifacts
       uses: actions/upload-artifact@v4
