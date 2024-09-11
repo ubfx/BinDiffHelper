@@ -21,7 +21,9 @@ jobs:
     steps:
     - name: Clone Repository
       uses: actions/checkout@v4
-  
+      with:
+        submodules: 'true'
+    
     - name: Install Java
       uses: actions/setup-java@v4
       with:
@@ -30,8 +32,6 @@ jobs:
 
     - name: Install Gradle
       uses: gradle/actions/setup-gradle@v3
-      with:
-        gradle-version: "7.5"
 
     - name: Install Ghidra ${{ matrix.ghidra }}
       uses: antoniovazquezblanco/setup-ghidra@v2.0.4
