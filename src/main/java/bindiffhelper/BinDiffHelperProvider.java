@@ -26,6 +26,7 @@ import java.nio.file.Paths;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
@@ -45,6 +46,7 @@ import docking.action.DockingAction;
 import docking.action.MenuData;
 import docking.action.ToolBarData;
 import docking.widgets.table.GTable;
+import docking.wizard.WizardManager;
 import ghidra.app.decompiler.DecompInterface;
 import ghidra.app.decompiler.DecompileResults;
 import ghidra.app.services.CodeViewerService;
@@ -66,98 +68,95 @@ import resources.ResourceManager;
 public class BinDiffHelperProvider extends ComponentProviderAdapter {
 
 	protected BinDiffHelperPlugin plugin;
-	
+
 	protected JPanel gui;
 	protected GTable table;
 	ComparisonTableModel ctm;
-	
+
 	protected JScrollPane scrollPane;
-	
+
 	protected Connection conn;
 	protected Program program;
-	
+
 	protected ToggleCheckSelectedAction toggleCheckedAction;
 	protected ImportCheckedFunctionNamesAction importCheckedAction;
 	protected ImportAllFunctionNamesAction importAllAction;
 	protected UpdatePlateCommentsAction upca;
 	protected UpdateFunctionColoringAction ufca;
-	
+
 	protected CodeViewerService cvs;
-	
+
 	protected final boolean hasExporter;
-	
+
 	protected String thisProg, otherProg;
-	
+
 	public BinDiffHelperProvider(BinDiffHelperPlugin plugin, Program program) {
 		super(plugin.getTool(), "BinDiffHelper GUI Provider", plugin.getName());
-		
+
 		hasExporter = plugin.binExportExporter != null;
-		
+
 		this.plugin = plugin;
 		setProgram(program);
-		
+
 		setIcon(ResourceManager.loadImage("images/BDH.png"));
-		
+
 		gui = new JPanel(new BorderLayout());
-	
+
 		generateWarnings();
-		
+
 		setDefaultWindowPosition(WindowPosition.WINDOW);
 		gui.setFocusable(true);
 		gui.setMinimumSize(new Dimension(400, 400));
 		gui.setPreferredSize(new Dimension(1200, 425));
-		
+
 		createActions();
 	}
-	
-	public void generateWarnings()
-	{
+
+	public void generateWarnings() {
 		if (table != null)
 			return;
-		
+
 		gui.removeAll();
-		
+
 		List<String> warnings = new ArrayList<String>();
-		
+
 		if (!hasExporter) {
-			warnings.add("The BinExport plugin couldn't be found so some features are disabled.<br />" +
-					"See the Readme at https://github.com/ubfx/BinDiffHelper for a link " +
-					"to the BinExport as binaries or in source.");
+			warnings.add("The BinExport plugin couldn't be found so some features are disabled.<br />"
+					+ "See the Readme at https://github.com/ubfx/BinDiffHelper for a link "
+					+ "to the BinExport as binaries or in source.");
 		}
-		
+
 		if (plugin.binDiffBinary == null) {
-			warnings.add("BinDiff binary has not been set so some features are disabled.<br />" +
-					"Go to the settings button and select the BinDiff binary if you want to connect with BinDiff directly<br />" +
-					"You can download BinDiff from https://zynamics.com/software.html");
+			warnings.add("BinDiff binary has not been set so some features are disabled.<br />"
+					+ "Go to the settings button and select the BinDiff binary if you want to connect with BinDiff directly<br />"
+					+ "You can download BinDiff from https://zynamics.com/software.html");
 		}
-		
+
 		if (!warnings.isEmpty()) {
 			String labelContent = "<html>";
-			
+
 			for (String w : warnings)
 				labelContent += "<p>" + w + "</p><br />";
-			
+
 			labelContent += "</html>";
 			JLabel warningLabel = new JLabel(labelContent, SwingConstants.CENTER);
 			gui.add(warningLabel, BorderLayout.CENTER);
 		}
-		
+
 		refresh();
 	}
-	
-	public void refresh()
-	{
+
+	public void refresh() {
 		gui.revalidate();
 		gui.repaint();
 	}
-	
-	private void createActions()
-	{
+
+	private void createActions() {
 		GeneralOpenAction op = new GeneralOpenAction(plugin);
 		SettingsDialogAction sa = new SettingsDialogAction(plugin);
-		
+
 		addLocalAction(sa);
-		
+
 		toggleCheckedAction = new ToggleCheckSelectedAction(plugin);
 		importCheckedAction = new ImportCheckedFunctionNamesAction(plugin);
 		importCheckedAction.setEnabled(false);
@@ -175,7 +174,7 @@ public class BinDiffHelperProvider extends ComponentProviderAdapter {
 		addLocalAction(upca);
 		addLocalAction(ufca);
 	}
-	
+
 	void dispose() {
 		removeFromTool();
 	}
@@ -184,322 +183,267 @@ public class BinDiffHelperProvider extends ComponentProviderAdapter {
 	public JComponent getComponent() {
 		return gui;
 	}
-	
-	public void execute(Command c)
-	{
+
+	public void execute(Command c) {
 		if (program == null)
 			return;
-		
+
 		tool.execute(c, program);
 	}
-	
-	public void setProgram(Program p)
-	{
+
+	public void setProgram(Program p) {
 		program = p;
-		if (p != null) {
+		if (p != null)
 			cvs = plugin.getTool().getService(CodeViewerService.class);
-		}
 	}
-	
-	protected boolean isMetadataVersionOK(Connection c) throws Exception
-	{
+
+	protected boolean isMetadataVersionOK(Connection c) throws Exception {
 		boolean ret = true;
-		
+
 		Statement stmt = conn.createStatement();
 		ResultSet rs = stmt.executeQuery("SELECT version from metadata");
-		
-		if (!rs.getString(1).startsWith("BinDiff 6") && !rs.getString(1).startsWith("BinDiff 7") && !rs.getString(1).startsWith("BinDiff 8")) {
+
+		if (!rs.getString(1).startsWith("BinDiff 6") && !rs.getString(1).startsWith("BinDiff 7")
+				&& !rs.getString(1).startsWith("BinDiff 8")) {
 			ret = false;
 		}
-		
+
 		stmt.close();
-		
+
 		return ret;
 	}
 
-	protected BinDiffFileDescriptor[] getBinDiffFileDescriptors(Connection conn) throws Exception
-	{
-		BinDiffFileDescriptor[] ret = new BinDiffFileDescriptor[2];
-		
+	public class DiffState {
+		BinExport2File beFile;
+		Program prog;
+		String addressCol, filename, exefilename, hash;
+		CodeViewerService cvs;
+	}
+
+	public DiffState primary, secondary;
+
+	public void openDB(String dbFilename) throws Exception {
+		if (!dbFilename.endsWith(".BinDiff"))
+			throw new Exception("Unexpected filename ending (expected .BinDiff)");
+
+		conn = DriverManager.getConnection("jdbc:sqlite:" + dbFilename);
+
+		if (!isMetadataVersionOK(conn)) {
+			Msg.showError(this, this.getComponent(), "Error", "Can't open this file as a BinDiff 6/7/8 database.");
+			return;
+		}
+
+		primary = new DiffState();
+		secondary = new DiffState();
+
 		Statement stmt = conn.createStatement();
-		
+
 		ResultSet rs = stmt.executeQuery("SELECT filename, exefilename, hash FROM file");
-		
+
+		DiffState ret[] = { primary, secondary };
 		for (int i = 0; i < 2; i++) {
 			if (!rs.next())
-				throw new Exception("");
-			
-			ret[i] = new BinDiffFileDescriptor(rs.getString("filename"),
-					rs.getString("exefilename"),
-					rs.getString("hash"));
+				throw new Exception("Couldn't get data from file table");
+
+			ret[i].filename = rs.getString("filename");
+			ret[i].exefilename = rs.getString("exefilename");
+			ret[i].hash = rs.getString("hash");
 		}
-		
+
 		stmt.close();
-		
-		return ret;
 	}
-	
-	protected void openBinDiffDB(String filename)
-	{
-		openBinDiffDB(filename, null, null);
-	}
-	
-	protected void openBinDiffDB(String filename, File be0, File be1) {
-		
-		if (program == null)
-		{
-			return;
-		}
-		
-		if (!filename.endsWith(".BinDiff"))
-		{
-			Msg.showInfo(this, getComponent(), "Info", "Unexpected filename ending (expected .BinDiff)");
-		}
-		
-		try {
-			String pname = program.getDomainFile().getName().toString();
-			
-			BinExport2File[] bi = new BinExport2File[2];
-			
-			conn = DriverManager.getConnection("jdbc:sqlite:" + filename);
-			
-			if (!isMetadataVersionOK(conn)) {
-				Msg.showError(this, this.getComponent(), "Error", "Can't open this file as a BinDiff 6/7/8 database.");
-				
+
+	public void openExternalDB(String dbFilename) throws Exception {
+		openDB(dbFilename);
+
+		File beFile[] = new File[2];
+		String filenames[] = { primary.filename, secondary.filename };
+
+		Path bindiff = Paths.get(dbFilename);
+
+		for (int i = 0; i < 2; i++) {
+			beFile[i] = bindiff.resolveSibling(filenames[i] + ".BinExport").toFile();
+
+			if (!beFile[i].exists()) {
+				Msg.showError(this, getComponent(), "Error", "Could not open " + beFile[i].getAbsolutePath());
 				return;
 			}
-			
-			int loadedProgramIndex = -1;
-			
-			if (be0 == null || be1 == null)
-			{				
-				BinDiffFileDescriptor[] fds = getBinDiffFileDescriptors(conn);
-				
-				Path bindiff = Paths.get(filename);
-				
-				for (int i = 0; i < 2; i++)
-				{
-					File binExportFile = bindiff.resolveSibling(fds[i].getFilename() + ".BinExport").toFile();
-					
-					if (!binExportFile.exists())
-					{
-						Msg.showError(this, getComponent(), "Error", "Could not open " + binExportFile.getAbsolutePath());
-						return;
-					}
-					
-					bi[i] = new BinExport2File(binExportFile);
-				}
-				
-				MatchDialog md = new MatchDialog(program, fds);
-				tool.showDialog(md);
-				
-				loadedProgramIndex = md.getSelected();
-				if (loadedProgramIndex == -1)
-				{
-					Msg.showError(this, getComponent(), "Error",
-							"Could not find loaded Program in BinDiff files\n" + pname + "\nin\n" +
-							fds[0].getFilename() + "\n" + fds[1].getFilename());
-					
-					return;
-				} else if (loadedProgramIndex == 1) {
-					// TODO: fix this
-					BinExport2File temp = bi[0];
-					bi[0] = bi[1];
-					bi[1] = temp;
-					
-					thisProg = fds[1].getFilename();
-					otherProg = fds[0].getFilename();
-				} else {
-					thisProg = fds[0].getFilename();
-					otherProg = fds[1].getFilename();
-				}
-				
-				
-			}
-			else
-			{
-				loadedProgramIndex = 0;
-				bi[0] = new BinExport2File(be0);
-				bi[1] = new BinExport2File(be1);
-			}
+		}
 
-			Program2Dialog p2d = new Program2Dialog(plugin);
-			tool.showDialog(p2d);
+		// Assume bi[0] is the primary for now, this can be swapped later after matching
+		primary.beFile = new BinExport2File(beFile[0]);
+		primary.addressCol = "address1";
+		primary.cvs = cvs;
+		secondary.beFile = new BinExport2File(beFile[1]);
+		secondary.addressCol = "address2";
+	}
 
-			Program program2 = p2d.getDomainFile() != null ? p2d.openProgram() : null;
-			CodeViewerService cvs2 = program2 != null ? p2d.getCodeViewerService() : null;
-			String pname2 = program2 != null ? p2d.getDomainFile().getName().toString() : null;
+	public void openExternalDBWithBinExports(String dbFilename, File pimaryBeFile, File secondaryBeFile)
+			throws Exception {
+		openDB(dbFilename);
 
-			Project project = plugin.getTool().getProject();
-			Path projectPath = project.getProjectLocator().getProjectDir().toPath();
+		primary.beFile = new BinExport2File(pimaryBeFile);
+		primary.addressCol = "address1";
+		primary.cvs = cvs;
 
+		secondary.beFile = new BinExport2File(secondaryBeFile);
+		secondary.addressCol = "address2";
+	}
+
+	protected void doDiffWork() {
+		if (primary == null || secondary == null)
+			return;
+
+		Project project = plugin.getTool().getProject();
+		Path projectPath = project.getProjectLocator().getProjectDir().toPath();
+		AddressSpace addrSpace = program.getAddressFactory().getDefaultAddressSpace();
+		AddressSpace addrSpace2 = secondary.prog != null ? secondary.prog.getAddressFactory().getDefaultAddressSpace()
+				: null;
+
+		var st = program.getSymbolTable();
+
+		Set<Long> priFnSet = primary.beFile.getFunctionAddressSet();
+		Set<Long> commonPriFnSet = new TreeSet<Long>();
+		Set<Long> secFnSet = secondary.beFile.getFunctionAddressSet();
+		Set<Long> commonSecFnSet = new TreeSet<Long>();
+
+		ctm = new ComparisonTableModel();
+		try {
 			Statement stmt = conn.createStatement();
-			ResultSet rs = stmt.executeQuery( "SELECT address1, address2, similarity, confidence, name "
+
+			ResultSet rs = stmt.executeQuery("SELECT address1, address2, similarity, confidence, name "
 					+ "FROM function JOIN functionalgorithm ON function.algorithm=functionalgorithm.id "
-					+ "ORDER BY similarity DESC"
-					);
-			
-			String priAddressCol, secAddressCol;
-			if (loadedProgramIndex == 0)
-			{
-				priAddressCol = "address1";
-				secAddressCol = "address2";
-			}
-			else
-			{
-				priAddressCol = "address2";
-				secAddressCol = "address1";
-			}
-			
-			AddressSpace addrSpace = program.getAddressFactory().getDefaultAddressSpace();
-			AddressSpace addrSpace2 = program2 != null ? program2.getAddressFactory().getDefaultAddressSpace() : null;
-			
-			Set<Long> priFnSet = bi[0].getFunctionAddressSet();
-			Set<Long> commonPriFnSet = new TreeSet<Long>();
-			Set<Long> secFnSet = bi[1].getFunctionAddressSet();
-			Set<Long> commonSecFnSet = new TreeSet<Long>();
+					+ "ORDER BY similarity DESC");
 
-			
-			ctm = new ComparisonTableModel();
-			var st = program.getSymbolTable();
-			
-			while (rs.next())
-			{
+			while (rs.next()) {
 
-				Address priAddress = addrSpace.getAddress(rs.getLong(priAddressCol));
-				long secAddress = rs.getLong(secAddressCol);
-				
-				// Store the addresses of functions that are the same so we can add sets of functions that are in one but not the other
-				commonPriFnSet.add(rs.getLong(priAddressCol));
-				commonSecFnSet.add(rs.getLong(secAddressCol));
+				Address priAddress = addrSpace.getAddress(rs.getLong(primary.addressCol));
+				long secAddress = rs.getLong(secondary.addressCol);
+
+				// Store the addresses of functions that are the same so we can add sets of
+				// functions that are in one but not the other
+				commonPriFnSet.add(rs.getLong(primary.addressCol));
+				commonSecFnSet.add(rs.getLong(secondary.addressCol));
 
 				Symbol s = null;
-				
+
 				if (st.hasSymbol(priAddress))
 					s = st.getSymbols(priAddress)[0];
-				
-				String priFn = bi[0].getFunctionName(priAddress);
-				String secFn = bi[1].getFunctionName(secAddress);
-				
+
+				String priFn = primary.beFile.getFunctionName(priAddress);
+				String secFn = secondary.beFile.getFunctionName(secAddress);
+
 				double similarity = rs.getDouble("similarity");
 				double confidence = rs.getDouble("confidence");
-				
-				// TODO: Document this: Note to self, this assumes that the DB that has had the work done to it is the secondary. 
-				// IE we are looking at a new file and we've done a bindiff against a DB where we've already done some RE work.
-				// We may want to add toggle here so if you are trying to look at a "new" db as the secondary file we do the right thing.
-				boolean defaultTicked = similarity == 1.0f && !secFn.startsWith("thunk_FUN_") && !secFn.startsWith("FUN_") && !priFn.equals(secFn);
-				ctm.addEntry(
-						new ComparisonTableModel.Entry(defaultTicked,
-								priAddress,
-								priFn,
-								s,
-								secAddress,
-								secFn,
-								similarity,
-								confidence,
-								rs.getString("name"))
-				);
+
+				// TODO: Document this: Note to self, this assumes that the DB that has had the
+				// work done to it is the secondary.
+				// IE we are looking at a new file and we've done a bindiff against a DB where
+				// we've already done some RE work.
+				// We may want to add toggle here so if you are trying to look at a "new" db as
+				// the secondary file we do the right thing.
+				boolean defaultTicked = similarity == 1.0f && !secFn.startsWith("thunk_FUN_")
+						&& !secFn.startsWith("FUN_") && !priFn.equals(secFn);
+				ctm.addEntry(new ComparisonTableModel.Entry(defaultTicked, priAddress, priFn, s, secAddress, secFn,
+						similarity, confidence, rs.getString("name")));
 			}
 			stmt.close();
-			
-			// Now lets add functions that are in our program but not the other to the list
-			Set<Long> onlyInPrimary = new TreeSet<Long>(priFnSet);
-			onlyInPrimary.removeAll(commonPriFnSet);
-			Set<Long> onlyInSecondary = new TreeSet<Long>(secFnSet);
-			onlyInSecondary.removeAll(commonSecFnSet);
-			// Lets add the functions that are only in the primary here
-			for(Long x : onlyInPrimary) {
-				Address priAddress = addrSpace.getAddress(x);
-				Symbol s = null;
-				String priFn = bi[0].getFunctionName(priAddress);
-				if(st.hasSymbol(priAddress))
-					s = st.getSymbols(priAddress)[0];
-				ctm.addEntry(
-						new ComparisonTableModel.Entry(false, priAddress, priFn, s, 0, null, 0, 1, "Only in primary")
-						);
-			}
-			// Lets add the functions that are only in the secondary here
-			for(Long x : onlyInSecondary) {
-				String secFn = bi[1].getFunctionName(x);
-				ctm.addEntry(
-						new ComparisonTableModel.Entry(false, null, null, null, x, secFn, 0, 1, "Only in Secondary")
-						);
-			}
-			
-			Msg.showInfo(this, this.getComponent(), "Success", "Opened successfully");
-			
-			boolean createTable = table == null;
-			
-			if (createTable)
-			{
-				table = new GTable();
-				scrollPane = new JScrollPane(table);
-				gui.removeAll();
-				gui.add(scrollPane, BorderLayout.CENTER);
-			}
-			
-			table.setModel(ctm);
-			
-			table.getColumn("Import").setMaxWidth(50);
-			table.getColumn("Similarity").setMaxWidth(100);
-			table.setAutoResizeMode(GTable.AUTO_RESIZE_ALL_COLUMNS);
-			
-			table.addMouseListener(new MouseAdapter() {
-				public void mousePressed(MouseEvent e) {
-					if (e.getClickCount() == 2 && table.getSelectedRow() != -1)
-					{
-						var entry = ctm.getEntry(table.getSelectedRow());
-						cvs.goTo(new ProgramLocation(program, entry.primaryAddress), true);
-						if (program2 != null)
-						{
-							Address secAddress = addrSpace2.getAddress(entry.secondaryAddress);
-							cvs2.goTo(new ProgramLocation(program2, secAddress), true);
-						}
+
+		} catch (SQLException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+
+		// Now lets add functions that are in our program but not the other to the list
+		Set<Long> onlyInPrimary = new TreeSet<Long>(priFnSet);
+		onlyInPrimary.removeAll(commonPriFnSet);
+		Set<Long> onlyInSecondary = new TreeSet<Long>(secFnSet);
+		onlyInSecondary.removeAll(commonSecFnSet);
+		// Lets add the functions that are only in the primary here
+		for (Long x : onlyInPrimary) {
+			Address priAddress = addrSpace.getAddress(x);
+			Symbol s = null;
+			String priFn = primary.beFile.getFunctionName(priAddress);
+			if (st.hasSymbol(priAddress))
+				s = st.getSymbols(priAddress)[0];
+			ctm.addEntry(new ComparisonTableModel.Entry(false, priAddress, priFn, s, 0, null, 0, 1, "Only in primary"));
+		}
+		// Lets add the functions that are only in the secondary here
+		for (Long x : onlyInSecondary) {
+			String secFn = secondary.beFile.getFunctionName(x);
+			ctm.addEntry(new ComparisonTableModel.Entry(false, null, null, null, x, secFn, 0, 1, "Only in Secondary"));
+		}
+
+		Msg.showInfo(this, this.getComponent(), "Success", "Opened successfully");
+
+		boolean createTable = table == null;
+
+		if (createTable) {
+			table = new GTable();
+			scrollPane = new JScrollPane(table);
+			gui.removeAll();
+			gui.add(scrollPane, BorderLayout.CENTER);
+		}
+
+		table.setModel(ctm);
+
+		table.getColumn("Import").setMaxWidth(50);
+		table.getColumn("Similarity").setMaxWidth(100);
+		table.setAutoResizeMode(GTable.AUTO_RESIZE_ALL_COLUMNS);
+
+		table.addMouseListener(new MouseAdapter() {
+			public void mousePressed(MouseEvent e) {
+				if (e.getClickCount() == 2 && table.getSelectedRow() != -1) {
+					var entry = ctm.getEntry(table.getSelectedRow());
+					cvs.goTo(new ProgramLocation(program, entry.primaryAddress), true);
+					if (secondary.prog != null) {
+						Address secAddress = secondary.prog.getAddressFactory().getDefaultAddressSpace()
+								.getAddress(entry.secondaryAddress);
+						secondary.cvs.goTo(new ProgramLocation(secondary.prog, secAddress), true);
 					}
-					if (program2 != null && e.getClickCount() == 3 && table.getSelectedRow() != -1)
-					{
-						var entry = ctm.getEntry(table.getSelectedRow());
-						try {
-							Function function = program.getListing().getFunctionAt(entry.primaryAddress);
-							Address secAddress = addrSpace2.getAddress(entry.secondaryAddress);
-							Function function2 = program2.getListing().getFunctionAt(secAddress);
+				}
+				if (secondary.prog != null && e.getClickCount() == 3 && table.getSelectedRow() != -1) {
+					String pname = program.getDomainFile().getName().toString();
+					String pname2 = secondary.prog.getDomainFile().getName().toString();
 
-							String decompiledCode1 = decompileFunction(function, program);
-							String decompiledCode2 = decompileFunction(function2, program2);
+					var entry = ctm.getEntry(table.getSelectedRow());
+					try {
+						Function function = program.getListing().getFunctionAt(entry.primaryAddress);
+						Address secAddress = addrSpace2.getAddress(entry.secondaryAddress);
+						Function function2 = secondary.prog.getListing().getFunctionAt(secAddress);
 
-							Path path1 = projectPath.resolve("decompiled").resolve(pname)
+						String decompiledCode1 = decompileFunction(function, program);
+						String decompiledCode2 = decompileFunction(function2, secondary.prog);
+
+						Path path1 = projectPath.resolve("decompiled").resolve(pname)
 								.resolve("0x" + Long.toHexString(entry.primaryAddress.getUnsignedOffset()) + ".c");
-							Path path2 = projectPath.resolve("decompiled").resolve(pname2)
+						Path path2 = projectPath.resolve("decompiled").resolve(pname2)
 								.resolve("0x" + Long.toHexString(secAddress.getUnsignedOffset()) + ".c");
 
-							writeToFile(path1, decompiledCode1);
-							writeToFile(path2, decompiledCode2);
+						writeToFile(path1, decompiledCode1);
+						writeToFile(path2, decompiledCode2);
 
-							String command = plugin.diffCommand
-								.replace("$file1", path1.toString())
-								.replace("$file2", path2.toString());
-							Runtime.getRuntime().exec(command);
-						} catch (Exception ex) {
-							Msg.showError(this, getComponent(), "Error", ex.getMessage());
-						}
+						String command = plugin.diffCommand.replace("$file1", path1.toString()).replace("$file2",
+								path2.toString());
+						Runtime.getRuntime().exec(command);
+					} catch (Exception ex) {
+						Msg.showError(this, getComponent(), "Error", ex.getMessage());
 					}
-				}	
-			});
-			
-			importCheckedAction.setEntries(ctm.getEntries());
-			importCheckedAction.setEnabled(true);
-			importAllAction.setEntries(ctm.getEntries());
-			importAllAction.setEnabled(true);
-			upca.setEntries(ctm.getEntries());
-			upca.setEnabled(true);
-			ufca.setEntries(ctm.getEntries());
-			ufca.setEnabled(true);
-			
-			refresh();
-		} catch (Exception e) {
-			Msg.showError(this, this.getComponent(), "Error: ", e.toString());
-			return;
-		}		
+				}
+			}
+		});
+
+		importCheckedAction.setEntries(ctm.getEntries());
+		importCheckedAction.setEnabled(true);
+		importAllAction.setEntries(ctm.getEntries());
+		importAllAction.setEnabled(true);
+		upca.setEntries(ctm.getEntries());
+		upca.setEnabled(true);
+		ufca.setEntries(ctm.getEntries());
+		ufca.setEnabled(true);
+
+		refresh();
+
 	}
 
 	protected String decompileFunction(Function function, Program program) {
@@ -523,73 +467,76 @@ public class BinDiffHelperProvider extends ComponentProviderAdapter {
 	protected void writeToFile(Path path, String content) {
 		try {
 			Path parent = path.getParent();
-			if (parent != null) Files.createDirectories(parent);
+			if (parent != null)
+				Files.createDirectories(parent);
 			Files.write(path, content.getBytes());
 		} catch (Exception e) {
 			Msg.showError(this, this.getComponent(), "Error: ", e.toString());
 		}
 	}
-	
+
 	public class GeneralOpenAction extends DockingAction {
 
 		public GeneralOpenAction(BinDiffHelperPlugin plugin) {
 			super("Open from Project", plugin.getName());
-			
+
 			this.setMenuBarData(new MenuData(new String[] { "Open", "Open a file for comparison" }, "Open"));
-			
+
 			setToolBarData(new ToolBarData(ResourceManager.loadImage("images/open_from_project.png"), "Open"));
 
 			setDescription(HTMLUtilities.toHTML("Open a file for comparison"));
-			
+
 		}
 
 		@Override
 		public void actionPerformed(ActionContext context) {
-			DockingWindowManager.showDialog(new GeneralOpenDialog(plugin));
-		}		
+			// DockingWindowManager.showDialog(new GeneralOpenDialog(plugin));
+			DiffPanelManager panelManager = new DiffPanelManager(plugin);
+			WizardManager wm = new WizardManager("New Diff", true, panelManager);
+			wm.showWizard(tool.getToolFrame());
+		}
 	}
-	
+
 	public class SettingsDialogAction extends DockingAction {
 
 		private BinDiffHelperPlugin plugin;
-		
+
 		public SettingsDialogAction(BinDiffHelperPlugin plugin) {
 			super("Settings", plugin.getName());
-		
+
 			this.plugin = plugin;
-			
+
 			this.setMenuBarData(new MenuData(new String[] { "Settings" }, "Settings"));
-			
+
 			setToolBarData(new ToolBarData(ResourceManager.loadImage("images/setting_tools.png"), "Settings"));
 
 			setDescription(HTMLUtilities.toHTML("Settings"));
-			
+
 		}
 
 		@Override
 		public void actionPerformed(ActionContext context) {
 			DockingWindowManager.showDialog(new SettingsDialog(plugin));
-		}	
+		}
 	}
-	
+
 	public class BinDiffFileDescriptor {
 		private String filename, exefilename, hash;
-		
-		public BinDiffFileDescriptor(String filename, String exefilename, String hash)
-		{
+
+		public BinDiffFileDescriptor(String filename, String exefilename, String hash) {
 			this.filename = filename;
 			this.exefilename = exefilename;
 			this.hash = hash;
 		}
-		
+
 		public String getFilename() {
 			return filename;
 		}
-		
+
 		public String getExeFilename() {
 			return exefilename;
 		}
-		
+
 		public String getHash() {
 			return hash;
 		}
