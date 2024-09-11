@@ -21,7 +21,7 @@ buildscript {
 }
 
 dependencies {
-    //implementation project(':BinExport')
+    implementation project(':BinExport')
     implementation 'org.xerial:sqlite-jdbc:3.46.0.1'
 }
 
@@ -48,6 +48,10 @@ else {
 }
 //----------------------END "DO NOT MODIFY" SECTION-------------------------------
 
-tasks.named("buildExtension").configure {
-    dependsOn(":BinExport:generateProto")
+//tasks.named("buildExtension").configure {
+//    dependsOn(":BinExport:generateProto")
+//}
+
+tasks.named("copyDependencies").configure {
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
 }
