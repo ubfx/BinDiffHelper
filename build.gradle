@@ -1,6 +1,11 @@
 apply plugin: 'java'
-apply plugin: 'com.google.protobuf'
 apply plugin: 'eclipse'
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(17)
+    }
+}
 
 repositories {
     mavenCentral()
@@ -12,44 +17,18 @@ buildscript {
     }
 
     dependencies {
-        classpath 'com.google.protobuf:protobuf-gradle-plugin:0.8.19'
     }
 }
 
 dependencies {
-    implementation 'com.google.protobuf:protobuf-java:3.21.2'
+    //implementation project(':BinExport')
     implementation 'org.xerial:sqlite-jdbc:3.46.0.1'
 }
 
-protobuf {
-    // Configure the protoc executable.
-    protoc {
-        artifact = 'com.google.protobuf:protoc:3.21.2'
-    }
-    
-    generateProtoTasks.generatedFilesBaseDir = 'src/'
-
-    generateProtoTasks {
-        all().each {
-            it.group = 'generate proto'
-        }
-    }
-}
-
-/*
-task copyLib(type: Copy) {
-    from ('lib/') {
-        include '*sqlite*'
-        include '*protobuf*'
-    }
-    into 'lib/'
-}
-
-// Extend jar task to collect extra dependencies.
 jar {
-    dependsOn copyLib
+    exclude('binexport')
 }
-*/
+
 // Standard Ghidra extension Gradle code follows.
 //----------------------START "DO NOT MODIFY" SECTION------------------------------
 def ghidraInstallDir
@@ -68,3 +47,7 @@ else {
     throw new GradleException("GHIDRA_INSTALL_DIR is not defined!")
 }
 //----------------------END "DO NOT MODIFY" SECTION-------------------------------
+
+tasks.named("buildExtension").configure {
+    dependsOn(":BinExport:generateProto")
+}

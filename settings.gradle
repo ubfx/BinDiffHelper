@@ -1,0 +1,3 @@
+rootProject.name = "BinDiffHelper"
+include "BinExport"
+project(":BinExport").projectDir = new File('binexport/java')
