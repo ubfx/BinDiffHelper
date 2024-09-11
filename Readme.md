@@ -6,6 +6,11 @@ Check out the [BinDiff manual](https://www.zynamics.com/bindiff/manual/) to see 
 **Please report bugs via the issue feature on github**
 
 ## What it does / Changelog
+### v0.6
+* Update sqlite driver library, should now run on Apple silicon
+* Support external textual diffs between decompiled functions (see https://github.com/ubfx/BinDiffHelper/pull/24)
+* UI updates
+
 ### v0.5
 * Support BinDiff 8
 * Release for Ghidra 11.1
@@ -100,8 +105,14 @@ Select the other file from the tree and click OK.
 Requirements:
 
 * Ghidra installation (https://ghidra-sre.org) or compiled from source
-* some jdk (if you built Ghidra yourself, it needs to be the same jdk)
-* gradle (tested with 7.5)
+* Some jdk. There might be certain restrictions depending on how your Ghidra was built and what other plugins you're using. I recommend using [Temurin 17 LTS](https://adoptium.net/temurin/releases/?version=17), as this currently seems to work with both BinExport and BinDiffHelper. 
+* gradle (tested with 7.5, 8.10)
+
+### Clone the repository
+Recursively clone the repository, as it depends on [BinExport](https://github.com/google/binexport) for the respective protocol buffer definition.
+```
+git clone --recurse-submodules https://github.com/ubfx/BinDiffHelper.git
+```
 
 ### Build it
 You need to set the `GHIDRA_INSTALL_DIR` environment variable to the Ghidra installation dir.
@@ -115,9 +126,7 @@ And then go the *BinDiffHelper folder* in your shell and do
 gradle
 ```
 
-There should have been a .zip-File created in the dist directory.
-
-Use that .zip File to install according to the instructions above.
+This will build both BinExport in the respective submodule and BinDiffHelper in the parent directory. There should have been a .zip-File created in the dist directory. Use that .zip File to install according to the instructions above.
 
 ## Development / Debugging setup
 Sometimes it's useful to be able to debug the extension together with Ghidra, here are some notes on that:
