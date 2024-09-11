@@ -51,7 +51,6 @@ import ghidra.app.decompiler.DecompInterface;
 import ghidra.app.decompiler.DecompileResults;
 import ghidra.app.services.CodeViewerService;
 import ghidra.framework.cmd.Command;
-import ghidra.framework.model.DomainFile;
 import ghidra.framework.model.Project;
 import ghidra.framework.plugintool.ComponentProviderAdapter;
 import ghidra.program.model.address.Address;

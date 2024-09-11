@@ -174,9 +174,9 @@ public class BinDiffHelperPlugin extends ProgramPlugin {
 			
 			String[] cmd = {binDiffBinary, pri.getAbsolutePath(), sec.getAbsolutePath(), "--output_dir", outputDir};
 			
-			Msg.debug(this, "bd6: " + binDiffBinary + "\nfiles:" + pri.getAbsolutePath() + "," + sec.getAbsolutePath() + "\n"+
+			Msg.debug(this, "bd: " + binDiffBinary + "\nfiles:" + pri.getAbsolutePath() + "," + sec.getAbsolutePath() + "\n"+
 					"output dir: " + outputDir);
-			Msg.debug(this, "printing BD6 output for cmd: " + Arrays.toString(cmd));
+			Msg.debug(this, "printing BD output for cmd: " + Arrays.toString(cmd));
 			Process p = null;
 			try {
 				p = Runtime.getRuntime().exec(cmd);

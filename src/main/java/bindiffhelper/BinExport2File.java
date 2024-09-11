@@ -15,37 +15,32 @@ public class BinExport2File {
 
 	protected BinExport2 be;
 	protected HashMap<Long, String> functionNames;
-	
-	public BinExport2File(File f) throws Exception
-	{
+
+	public BinExport2File(File f) throws Exception {
 		FileInputStream fi = new FileInputStream(f);
 		be = BinExport2.parseFrom(fi);
 		fi.close();
-		
+
 		functionNames = new HashMap<Long, String>();
 		CallGraph cg = be.getCallGraph();
-		for (Vertex v : cg.getVertexList())
-		{
+		for (Vertex v : cg.getVertexList()) {
 			functionNames.put(v.getAddress(), v.getMangledName());
 		}
 	}
-	
-	public Set<Long> getFunctionAddressSet(){
+
+	public Set<Long> getFunctionAddressSet() {
 		return functionNames.keySet();
 	}
-	
-	public boolean hasFunctionName(long address)
-	{
+
+	public boolean hasFunctionName(long address) {
 		return functionNames.containsKey(address);
 	}
-	
-	public String getFunctionName(Address address)
-	{		
+
+	public String getFunctionName(Address address) {
 		return getFunctionName(address.getUnsignedOffset());
 	}
-	
-	public String getFunctionName(long address)
-	{		
+
+	public String getFunctionName(long address) {
 		return functionNames.get(address);
 	}
 }

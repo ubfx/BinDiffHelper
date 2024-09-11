@@ -17,39 +17,39 @@ public class SettingsDialog extends DialogComponentProvider {
 
 	protected BinDiffHelperPlugin plugin;
 	protected GhidraFileChooserPanel fileChooserPanel;
-    private JTextField customTextField;
-	
+	private JTextField customTextField;
+
 	public SettingsDialog(BinDiffHelperPlugin plugin) {
 		super("Settings");
-		
+
 		this.plugin = plugin;
-		
+
 		JPanel panel = new JPanel(new BorderLayout());
 		panel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
-		
+
 		JLabel fileChooserLabel = new JLabel("Select the BinDiff 6/7/8 binary");
 		panel.add(fileChooserLabel, BorderLayout.NORTH);
-		
+
 		fileChooserPanel = new GhidraFileChooserPanel("BinDiff", BinDiffHelperPlugin.BDBINPROPERTY,
 				plugin.binDiffBinary, true, GhidraFileChooserPanel.INPUT_MODE);
 		fileChooserPanel.setVisible(true);
-		
+
 		fileChooserPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
 		panel.add(fileChooserPanel, BorderLayout.CENTER);
 
 		JPanel diffCommandPanel = new JPanel(new BorderLayout());
 		diffCommandPanel.setBorder(BorderFactory.createEmptyBorder());
-		
+
 		JLabel diffCommandLabel = new JLabel("Custom diff command:");
 		diffCommandPanel.add(diffCommandLabel, BorderLayout.NORTH);
 
-        JPanel diffCommandTextField = new JPanel(new BorderLayout());
-        diffCommandTextField.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
-		
+		JPanel diffCommandTextField = new JPanel(new BorderLayout());
+		diffCommandTextField.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+
 		customTextField = new JTextField();
 		customTextField.setText(plugin.diffCommand);
 		diffCommandTextField.add(customTextField, BorderLayout.CENTER);
-		
+
 		diffCommandPanel.add(diffCommandTextField, BorderLayout.CENTER);
 		panel.add(diffCommandPanel, BorderLayout.SOUTH);
 
@@ -64,11 +64,11 @@ public class SettingsDialog extends DialogComponentProvider {
 		cancelButton.addActionListener(e -> cancelCallback());
 		addButton(cancelButton);
 	}
-	
+
 	@Override
-	protected void okCallback() {		
+	protected void okCallback() {
 		close();
-		
+
 		try {
 			plugin.updateBinDiffBinary();
 		} catch (IOException e) {
