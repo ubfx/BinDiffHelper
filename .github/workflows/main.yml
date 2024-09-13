@@ -3,6 +3,11 @@ on:
   push:
   pull_request:
   workflow_dispatch:
+    inputs:
+      ghidra_version:
+        description: 'Specify the Ghidra version(s) you want to build for (e.g. "latest", "10.1.5")'
+        required: true
+        default: '"latest"'
   schedule:
     - cron: '0 0 1 * *' # Monthly
 permissions:
@@ -14,8 +19,7 @@ jobs:
 
     strategy:
       matrix:
-        ghidra:
-          - "latest"
+        ghidra: ${{ fromJSON(format('[{0}]', inputs.ghidra_version || '"latest"')) }}
 
     steps:
     - name: Clone Repository
