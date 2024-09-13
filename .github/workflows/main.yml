@@ -5,7 +5,7 @@ on:
   workflow_dispatch:
     inputs:
       ghidra_version:
-        description: 'Specify the Ghidra version(s) you want to build for (e.g. "latest", "10.1.5")'
+        description: 'Specify the Ghidra version(s) you want to build for (e.g. "latest", "11.0")'
         required: true
         default: '"latest"'
   schedule:
