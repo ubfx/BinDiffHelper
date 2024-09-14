@@ -312,7 +312,7 @@ public class BinDiffHelperProvider extends ComponentProviderAdapter {
 
 			ResultSet rs = stmt.executeQuery("SELECT address1, address2, similarity, confidence, name "
 					+ "FROM function JOIN functionalgorithm ON function.algorithm=functionalgorithm.id "
-					+ "ORDER BY similarity DESC");
+					+ "ORDER BY similarity ASC");
 
 			while (rs.next()) {
 
