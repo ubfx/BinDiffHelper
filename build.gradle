@@ -55,3 +55,6 @@ else {
 tasks.named("copyDependencies").configure {
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
 }
+
+buildExtension.exclude '.github/**'
+buildExtension.exclude 'binexport/**'
