@@ -25,10 +25,6 @@ dependencies {
     implementation 'org.xerial:sqlite-jdbc:3.46.0.1'
 }
 
-jar {
-    exclude('binexport')
-}
-
 // Standard Ghidra extension Gradle code follows.
 //----------------------START "DO NOT MODIFY" SECTION------------------------------
 def ghidraInstallDir
