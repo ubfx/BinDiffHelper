@@ -105,7 +105,7 @@ Select the other file from the tree and click OK.
 Requirements:
 
 * Ghidra installation (https://ghidra-sre.org) or compiled from source
-* Some jdk. There might be certain restrictions depending on how your Ghidra was built and what other plugins you're using. I recommend using [Temurin 17 LTS](https://adoptium.net/temurin/releases/?version=17), as this currently seems to work with both BinExport and BinDiffHelper. 
+* Some jdk. There might be certain restrictions depending on how your Ghidra was built and what other plugins you're using. I recommend using [Temurin 21 LTS](https://adoptium.net/temurin/releases/?version=21), as this currently seems to work with both BinExport and BinDiffHelper. 
 * gradle (tested with 7.5, 8.10)
 
 ### Clone the repository
