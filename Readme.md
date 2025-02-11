@@ -133,7 +133,7 @@ Sometimes it's useful to be able to debug the extension together with Ghidra, he
 
 1. Clone and build Ghidra and let gradle create eclipse projects according to the DevGuide
 1. Import the projects into eclipse (make sure it has relevant plugins for extension development)
-1. Build and install GhidraDev
+1. [Install GhidraDev](https://github.com/NationalSecurityAgency/ghidra/blob/master/GhidraBuild/EclipsePlugins/GhidraDev/GhidraDevPlugin/README.md#manual-installation-in-eclipse-online)
 1. Unpack the Ghidra build and link GhidraDev to it. Maybe have to set `GHIDRA_INSTALL_DIR` environment variable
 1. Run Ghidra from eclipse and install BinExport extension
 1. Create BinDiffHelper eclipse project with `gradle build eclipse`
