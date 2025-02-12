@@ -181,8 +181,11 @@ public class BinDiffHelperPlugin extends ProgramPlugin {
 			try {
 				p = Runtime.getRuntime().exec(cmd);
 				var i = new BufferedReader(new InputStreamReader(p.getInputStream()));
-				
+				var stderr = p.getErrorStream();
 				while (!p.waitFor(1, TimeUnit.SECONDS)) {
+					// Empty stderr buffer
+					stderr.skip(stderr.available());
+					
 					while (true)
 					{
 						String line = i.readLine();
