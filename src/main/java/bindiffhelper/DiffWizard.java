@@ -390,6 +390,10 @@ class Program2Panel extends AbstractWizardJPanel {
 	public Program getProg() {
 		return program;
 	}
+	
+	public DomainFile getDf() {
+		return tp.getSelectedDomainFile();
+	}
 }
 
 class DiffPanelManager implements PanelManager {
@@ -516,18 +520,27 @@ class DiffPanelManager implements PanelManager {
 
 			plugin.provider.secondary.cvs = program2Panel.getCvs();
 			plugin.provider.secondary.prog = program2Panel.getProg();
+			plugin.provider.secondary.df = program2Panel.getDf();
 			plugin.provider.doDiffWork();
 			wizardMgr.close();
 		} else {
 			// from project
-			plugin.callBinDiff(fromProjectPanel.getDf(), files -> {
+			DomainFile df = fromProjectPanel.getDf();
+			plugin.callBinDiff(df, files -> {
 				if (files != null) {
 					try {
 						plugin.provider.openExternalDBWithBinExports(files[2].getAbsolutePath(), files[0], files[1]);
 					} catch (Exception e) {
 						e.printStackTrace();
 					}
-
+					plugin.provider.secondary.df = df;
+					try {
+						var dof = df.getReadOnlyDomainObject(plugin, DomainFile.DEFAULT_VERSION, TaskMonitor.DUMMY);
+						if (dof instanceof Program p)
+							plugin.provider.secondary.prog = p;
+					} catch (Exception e) {
+						
+					}
 					plugin.provider.doDiffWork();
 					wizardMgr.close();
 				}

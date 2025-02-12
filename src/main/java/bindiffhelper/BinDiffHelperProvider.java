@@ -49,10 +49,14 @@ import docking.widgets.table.GTable;
 import docking.wizard.WizardManager;
 import ghidra.app.decompiler.DecompInterface;
 import ghidra.app.decompiler.DecompileResults;
+import ghidra.app.events.ProgramLocationPluginEvent;
 import ghidra.app.services.CodeViewerService;
 import ghidra.framework.cmd.Command;
+import ghidra.framework.model.DomainFile;
 import ghidra.framework.model.Project;
 import ghidra.framework.plugintool.ComponentProviderAdapter;
+import ghidra.framework.plugintool.PluginEvent;
+import ghidra.framework.plugintool.PluginTool;
 import ghidra.program.model.address.Address;
 import ghidra.program.model.address.AddressSpace;
 import ghidra.program.model.listing.Function;
@@ -213,6 +217,7 @@ public class BinDiffHelperProvider extends ComponentProviderAdapter {
 	}
 
 	public class DiffState {
+		DomainFile df;
 		BinExport2File beFile;
 		Program prog;
 		String addressCol, filename, exefilename, hash;
@@ -394,11 +399,21 @@ public class BinDiffHelperProvider extends ComponentProviderAdapter {
 			public void mousePressed(MouseEvent e) {
 				if (e.getClickCount() == 2 && table.getSelectedRow() != -1) {
 					var entry = ctm.getEntry(table.getSelectedRow());
-					cvs.goTo(new ProgramLocation(program, entry.primaryAddress), true);
-					if (secondary.prog != null) {
+					//cvs.goTo(new ProgramLocation(program, entry.primaryAddress), true);
+					PluginEvent ev = new ProgramLocationPluginEvent(null, new ProgramLocation(program, entry.primaryAddress), program);
+					tool.firePluginEvent(ev);
+					
+					if (secondary.prog != null && secondary.df != null) {
 						Address secAddress = secondary.prog.getAddressFactory().getDefaultAddressSpace()
 								.getAddress(entry.secondaryAddress);
-						secondary.cvs.goTo(new ProgramLocation(secondary.prog, secAddress), true);
+						//secondary.cvs.goTo(new ProgramLocation(secondary.prog, secAddress), true);
+						PluginEvent secev = new ProgramLocationPluginEvent(null, new ProgramLocation(secondary.prog, secAddress), secondary.prog);
+						
+						for (var consumer : secondary.df.getConsumers()) {
+							if (consumer instanceof PluginTool pt)
+								pt.firePluginEvent(secev);
+						}
+						tool.firePluginEvent(secev);
 					}
 				}
 				if (secondary.prog != null && e.getClickCount() == 3 && table.getSelectedRow() != -1) {
