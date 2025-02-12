@@ -6,6 +6,10 @@ Check out the [BinDiff manual](https://www.zynamics.com/bindiff/manual/) to see 
 **Please report bugs via the issue feature on github**
 
 ## What it does / Changelog
+### v0.6.2
+* Fix a bug where the diffing hangs forever on BinDiff 8
+* When double clicking a symbol, follow it in both primary and secondary code listings
+
 ### v0.6
 * Update sqlite driver library, should now run on Apple silicon
 * Support external textual diffs between decompiled functions (see https://github.com/ubfx/BinDiffHelper/pull/24)
