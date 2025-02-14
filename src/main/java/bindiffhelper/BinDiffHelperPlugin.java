@@ -63,8 +63,8 @@ public class BinDiffHelperPlugin extends ProgramPlugin {
 	Exporter binExportExporter;
 	String binDiffBinary;
 	String diffCommand;
+	protected String defaultBinPath;
 	protected String defaultDiffCommand;
-	
 	Program program;
 	
 	public final static String BDBINPROPERTY = "de.ubfx.bindiffhelper.bindiffbinary";
@@ -103,12 +103,15 @@ public class BinDiffHelperPlugin extends ProgramPlugin {
 		}
 
 		if (System.getProperty("os.name").toLowerCase().contains("win")) {
+			defaultBinPath = "C:\\Program Files\\BinDiff\\bin\\bindiff.exe";
 			defaultDiffCommand = "notepad++ -multiInst -nosession -lc -pluginMessage=compare \"$file1\" \"$file2\"";
 		}
 		if (System.getProperty("os.name").toLowerCase().contains("nix")) {
+			// defaultBinPath = "/opt/bindiff/bin/bindiff";
 			defaultDiffCommand = "x-terminal-emulator -e 'diff -u \"$file1\" \"$file2\"'";
 		}
 
+		binDiffBinary = Preferences.getProperty(BDBINPROPERTY, defaultBinPath);
 		diffCommand = Preferences.getProperty(DIFFCOMMAND, defaultDiffCommand);
 		
 		provider = new BinDiffHelperProvider(this, this.getCurrentProgram());
