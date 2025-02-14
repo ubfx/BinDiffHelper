@@ -4,9 +4,9 @@
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *      http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -32,12 +32,14 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.Comparator;
 
 import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.SwingConstants;
+import javax.swing.table.TableRowSorter;
 
 import docking.ActionContext;
 import docking.DockingWindowManager;
@@ -384,6 +386,14 @@ public class BinDiffHelperProvider extends ComponentProviderAdapter {
 
 		if (createTable) {
 			table = new GTable();
+
+			TableRowSorter<ComparisonTableModel> sorter = new TableRowSorter<>(ctm);
+			table.setRowSorter(sorter);
+
+			// Ensure proper sorting for similarity and confidence
+			sorter.setComparator(6, Comparator.comparingDouble(o -> (Double) o));  // Similarity
+			sorter.setComparator(7, Comparator.comparingDouble(o -> (Double) o));  // Confidence
+
 			scrollPane = new JScrollPane(table);
 			gui.removeAll();
 			gui.add(scrollPane, BorderLayout.CENTER);
