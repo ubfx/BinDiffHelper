@@ -85,13 +85,20 @@ public class ComparisonTableModel extends AbstractTableModel {
 		return false;
 	}
 
-	public Class<?> getColumnClass(int c) {
-		if (c == 0)
-			return Boolean.class;
-		// else if (c == 5)
-		// return Double.class;
-
-		return String.class;
+	@Override
+	public Class<?> getColumnClass(int columnIndex) {
+        return switch (columnIndex) {
+            case 0 -> Boolean.class;  // Checkbox column
+            case 1 -> String.class;   // Address this file (hex string)
+            case 2 -> String.class;   // Name this file
+            case 3 -> String.class;   // Name Database
+            case 4 -> String.class;   // Address other file (hex string)
+            case 5 -> String.class;   // Name other file
+            case 6 -> Double.class;   // Similarity (numeric)
+            case 7 -> Double.class;   // Confidence (numeric)
+            case 8 -> String.class;   // Algorithm
+            default -> Object.class;
+        };
 	}
 
 	public void setValueAt(Object value, int row, int col) {
