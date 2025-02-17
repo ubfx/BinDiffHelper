@@ -25,12 +25,12 @@ public class ToggleCheckSelectedAction extends DockingAction {
 
 	@Override
 	public void actionPerformed(ActionContext context) {
-		// TODO Auto-generated method stub
 		if (plugin.provider.table != null) {
 			for (var i : plugin.provider.table.getSelectedRows()) {
-				Boolean currentlyChecked = (Boolean) plugin.provider.ctm.getValueAt(i, 0);
+				int id = plugin.provider.table.convertRowIndexToModel(i);
+				Boolean currentlyChecked = (Boolean) plugin.provider.ctm.getValueAt(id, 0);
 
-				plugin.provider.ctm.setValueAt(!currentlyChecked, i, 0);
+				plugin.provider.ctm.setValueAt(!currentlyChecked, id, 0);
 			}
 		}
 

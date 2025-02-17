@@ -407,16 +407,15 @@ public class BinDiffHelperProvider extends ComponentProviderAdapter {
 
 		table.addMouseListener(new MouseAdapter() {
 			public void mousePressed(MouseEvent e) {
+				var entry = ctm.getEntry(table.convertRowIndexToModel(table.getSelectedRow()));
+				
 				if (e.getClickCount() == 2 && table.getSelectedRow() != -1) {
-					var entry = ctm.getEntry(table.getSelectedRow());
-					//cvs.goTo(new ProgramLocation(program, entry.primaryAddress), true);
 					PluginEvent ev = new ProgramLocationPluginEvent(null, new ProgramLocation(program, entry.primaryAddress), program);
 					tool.firePluginEvent(ev);
 					
 					if (secondary.prog != null && secondary.df != null) {
 						Address secAddress = secondary.prog.getAddressFactory().getDefaultAddressSpace()
 								.getAddress(entry.secondaryAddress);
-						//secondary.cvs.goTo(new ProgramLocation(secondary.prog, secAddress), true);
 						PluginEvent secev = new ProgramLocationPluginEvent(null, new ProgramLocation(secondary.prog, secAddress), secondary.prog);
 						
 						for (var consumer : secondary.df.getConsumers()) {
@@ -430,7 +429,6 @@ public class BinDiffHelperProvider extends ComponentProviderAdapter {
 					String pname = program.getDomainFile().getName().toString();
 					String pname2 = secondary.prog.getDomainFile().getName().toString();
 
-					var entry = ctm.getEntry(table.getSelectedRow());
 					try {
 						Function function = program.getListing().getFunctionAt(entry.primaryAddress);
 						Address secAddress = addrSpace2.getAddress(entry.secondaryAddress);
