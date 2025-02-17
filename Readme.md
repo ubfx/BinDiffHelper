@@ -6,6 +6,9 @@ Check out the [BinDiff manual](https://www.zynamics.com/bindiff/manual/) to see 
 **Please report bugs via the issue feature on github**
 
 ## What it does / Changelog
+### v0.6.3
+* Allow table sorting
+
 ### v0.6.2
 * Fix a bug where the diffing hangs forever on BinDiff 8
 * When double clicking a symbol, follow it in both primary and secondary code listings
@@ -19,6 +22,8 @@ Check out the [BinDiff manual](https://www.zynamics.com/bindiff/manual/) to see 
 * Support BinDiff 8
 * Release for Ghidra 11.1
 
+<details>
+<summary>Older changes</summary>
 ### v0.4.3
 * Release for Ghidra 11.0
 
@@ -54,10 +59,7 @@ Check out the [BinDiff manual](https://www.zynamics.com/bindiff/manual/) to see 
 * BinDiff the binary opened in Ghidra with another binary from the same Ghidra project, show results and import function names
 * Open a BinDiff file, created with BinDiff 6, from two .BinExport files and import the matching function names in Ghidra
 
-### Next releases
-* Import function names and function parameters (type and name)
-* Compare the binary opened in Ghidra with an external .BinExport (from IDA for example)
-* Communication with the BinDiff 6 GUI to show graphs for the different functions
+</details>
 
 ## How to Install
 Either download the .zip-File from the [release](https://github.com/ubfx/BinDiffHelper/releases), if it's compatible to your Ghidra version, otherwise see *How to build* below.
