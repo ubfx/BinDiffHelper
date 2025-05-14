@@ -182,26 +182,30 @@ public class BinDiffHelperPlugin extends ProgramPlugin {
 			Msg.debug(this, "printing BD output for cmd: " + Arrays.toString(cmd));
 			Process p = null;
 			try {
-				p = Runtime.getRuntime().exec(cmd);
-				var i = new BufferedReader(new InputStreamReader(p.getInputStream()));
-				var stderr = p.getErrorStream();
-				while (!p.waitFor(1, TimeUnit.SECONDS)) {
-					// Empty stderr buffer
-					stderr.skip(stderr.available());
-					
-					while (true)
-					{
-						String line = i.readLine();
-						
-						if (line == null)
-							break;
-						
-						Msg.debug(this, ">" + line);
+				ProcessBuilder pb = new ProcessBuilder(cmd);
+				pb.redirectErrorStream(true);
+				p = pb.start();
+
+				Process finalP = p;
+				Thread outputReader = new Thread(() -> {
+					try (BufferedReader reader = new BufferedReader(new InputStreamReader(finalP.getInputStream()))) {
+						String line;
+						while ((line = reader.readLine()) != null) {
+							Msg.debug(this, "> " + line);
+						}
+					} catch (IOException e) {
+						e.printStackTrace();
 					}
-					
+				});
+				outputReader.start();
+
+				while (!p.waitFor(1, TimeUnit.SECONDS)) {
 					d.checkCanceled();
 				}
-				
+
+				outputReader.join();
+				int exitCode = p.exitValue();
+				Msg.debug(this, "Process exited with code: " + exitCode);
 				Msg.debug(this, "end of output");
 				
 			} catch (IOException | InterruptedException e) {
