@@ -8,7 +8,10 @@ import docking.ActionContext;
 import docking.action.DockingAction;
 import docking.action.MenuData;
 import docking.action.ToolBarData;
+import ghidra.program.model.listing.Program;
+import ghidra.program.model.symbol.Namespace;
 import ghidra.program.model.symbol.SourceType;
+import ghidra.program.model.symbol.SymbolTable;
 import ghidra.util.HTMLUtilities;
 import ghidra.util.Msg;
 import resources.ResourceManager;
@@ -32,6 +35,31 @@ class ImportFunctionNamesAction extends DockingAction {
 		return false;
 	}
 
+	private Namespace getOrCreateNamespace(Program program, String namespacePath) throws Exception {
+
+		SymbolTable symbolTable = program.getSymbolTable();
+		Namespace currentNamespace = program.getGlobalNamespace();
+
+		if (namespacePath == null || namespacePath.isEmpty()) {
+			return currentNamespace;
+		}
+
+		String[] namespaces = namespacePath.split("::");
+		for (String namespaceName : namespaces) {
+			ghidra.program.model.symbol.Namespace nextNamespace = symbolTable.getNamespace(
+					namespaceName, currentNamespace);
+
+			if (nextNamespace == null) {
+				nextNamespace = symbolTable.createNameSpace(
+						currentNamespace, namespaceName, SourceType.IMPORTED);
+			}
+
+			currentNamespace = nextNamespace;
+		}
+
+		return currentNamespace;
+	}
+
 	@Override
 	public void actionPerformed(ActionContext arg0) {
 		int trans = plugin.program.startTransaction("Rename functions");
@@ -46,7 +74,24 @@ class ImportFunctionNamesAction extends DockingAction {
 			Exception exp = null;
 			try {
 				transformation = e.primaryFunctionSymbol.getName() + " -> " + e.secondaryFunctionName;
-				e.primaryFunctionSymbol.setName(e.secondaryFunctionName, SourceType.IMPORTED);
+
+				if (e.secondaryFunctionName.contains("::")) {
+					String[] parts = e.secondaryFunctionName.split("::");
+					String methodName = parts[parts.length - 1];
+
+					StringBuilder namespacePath = new StringBuilder();
+					for (int i = 0; i < parts.length - 1; i++) {
+						if (i > 0) namespacePath.append("::");
+						namespacePath.append(parts[i]);
+					}
+
+					Namespace namespace = getOrCreateNamespace(plugin.program, namespacePath.toString());
+
+					e.primaryFunctionSymbol.setNameAndNamespace(methodName, namespace, SourceType.IMPORTED);
+				} else {
+					e.primaryFunctionSymbol.setName(e.secondaryFunctionName, SourceType.IMPORTED);
+				}
+
 				e.do_import = false;
 			} catch (Exception ex) {
 				exp = ex;

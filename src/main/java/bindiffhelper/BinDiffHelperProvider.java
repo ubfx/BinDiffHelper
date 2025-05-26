@@ -313,7 +313,7 @@ public class BinDiffHelperProvider extends ComponentProviderAdapter {
 		Set<Long> secFnSet = secondary.beFile.getFunctionAddressSet();
 		Set<Long> commonSecFnSet = new TreeSet<Long>();
 
-		ctm = new ComparisonTableModel();
+		ctm = new ComparisonTableModel(plugin.enableNamespace);
 		try {
 			Statement stmt = conn.createStatement();
 
