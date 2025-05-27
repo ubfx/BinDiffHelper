@@ -3,11 +3,7 @@ package bindiffhelper;
 import java.awt.BorderLayout;
 import java.io.IOException;
 
-import javax.swing.BorderFactory;
-import javax.swing.JButton;
-import javax.swing.JLabel;
-import javax.swing.JPanel;
-import javax.swing.JTextField;
+import javax.swing.*;
 
 import docking.DialogComponentProvider;
 import docking.widgets.filechooser.GhidraFileChooserPanel;
@@ -18,6 +14,7 @@ public class SettingsDialog extends DialogComponentProvider {
 	protected BinDiffHelperPlugin plugin;
 	protected GhidraFileChooserPanel fileChooserPanel;
 	private JTextField customTextField;
+	private JCheckBox enableNamespaceCheckBox;
 
 	public SettingsDialog(BinDiffHelperPlugin plugin) {
 		super("Settings");
@@ -51,7 +48,18 @@ public class SettingsDialog extends DialogComponentProvider {
 		diffCommandTextField.add(customTextField, BorderLayout.CENTER);
 
 		diffCommandPanel.add(diffCommandTextField, BorderLayout.CENTER);
-		panel.add(diffCommandPanel, BorderLayout.SOUTH);
+
+		JPanel namespacePanel = new JPanel(new BorderLayout());
+		namespacePanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+		enableNamespaceCheckBox = new JCheckBox("Enable export Namespace");
+		enableNamespaceCheckBox.setSelected(plugin.enableNamespace);
+		namespacePanel.add(enableNamespaceCheckBox, BorderLayout.CENTER);
+
+		JPanel southContainer = new JPanel();
+		southContainer.setLayout(new BoxLayout(southContainer, BoxLayout.Y_AXIS));
+		southContainer.add(diffCommandPanel);
+		southContainer.add(namespacePanel);
+		panel.add(southContainer, BorderLayout.SOUTH);
 
 		addWorkPanel(panel);
 
@@ -76,6 +84,7 @@ public class SettingsDialog extends DialogComponentProvider {
 		}
 
 		plugin.updateDiffCommand(customTextField.getText());
+		plugin.updateEnableNamespace(enableNamespaceCheckBox.isSelected());
 		plugin.provider.generateWarnings();
 	}
 }

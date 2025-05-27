@@ -31,6 +31,7 @@ import ghidra.MiscellaneousPluginPackage;
 import ghidra.app.plugin.PluginCategoryNames;
 import ghidra.app.plugin.ProgramPlugin;
 import ghidra.app.services.CodeViewerService;
+import ghidra.app.util.Option;
 import ghidra.app.util.exporter.Exporter;
 import ghidra.framework.model.DomainFile;
 import ghidra.framework.plugintool.PluginInfo;
@@ -63,12 +64,14 @@ public class BinDiffHelperPlugin extends ProgramPlugin {
 	Exporter binExportExporter;
 	String binDiffBinary;
 	String diffCommand;
+	boolean enableNamespace;
 	protected String defaultBinPath;
 	protected String defaultDiffCommand;
 	Program program;
 	
 	public final static String BDBINPROPERTY = "de.ubfx.bindiffhelper.bindiffbinary";
 	public final static String DIFFCOMMAND = "de.ubfx.bindiffhelper.diffCommand";
+	public final static String ENABLENAMESPACE = "de.ubfx.bindiffhelper.enableNamespace";
 	/**
 	 * Plugin constructor.
 	 * 
@@ -113,6 +116,7 @@ public class BinDiffHelperPlugin extends ProgramPlugin {
 
 		binDiffBinary = Preferences.getProperty(BDBINPROPERTY, defaultBinPath);
 		diffCommand = Preferences.getProperty(DIFFCOMMAND, defaultDiffCommand);
+		enableNamespace = Boolean.parseBoolean(Preferences.getProperty(ENABLENAMESPACE, "false"));
 		
 		provider = new BinDiffHelperProvider(this, this.getCurrentProgram());
 		provider.setTitle("BinDiffHelper");
@@ -130,6 +134,14 @@ public class BinDiffHelperPlugin extends ProgramPlugin {
 			if (dof instanceof Program)
 			{
 				out = File.createTempFile(df.getName() + "_bdh", ".BinExport");
+
+				if (enableNamespace) {
+					binExportExporter.setOptions(
+							List.of(
+									new Option("Prepend Namespace to Function Names", true)
+							)
+					);
+				}
 				
 				if (binExportExporter.export(out, dof, null, TaskMonitor.DUMMY) == false)
 				{
@@ -285,6 +297,12 @@ public class BinDiffHelperPlugin extends ProgramPlugin {
 		binDiffBinary = bin;
 		
 		return true;		
+	}
+
+	public void updateEnableNamespace(boolean enable)
+	{
+		enableNamespace = enable;
+		Preferences.setProperty(ENABLENAMESPACE, Boolean.toString(enable));
 	}
 	
 	public void updateDiffCommand(String cmd)
