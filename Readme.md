@@ -6,6 +6,10 @@ Check out the [BinDiff manual](https://www.zynamics.com/bindiff/manual/) to see 
 **Please report bugs via the issue feature on github**
 
 ## What it does / Changelog
+### v0.6.4 (Ghidra versions < 11.4)
+* Export namespace support
+* Fix indefinite hang on diffing
+  
 ### v0.6.3
 * Allow table sorting
 
