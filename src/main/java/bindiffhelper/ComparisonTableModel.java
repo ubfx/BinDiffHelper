@@ -19,8 +19,11 @@ public class ComparisonTableModel extends AbstractTableModel {
 
 	private List<Entry> data;
 
-	public ComparisonTableModel() {
+	private boolean showNamespace = false;
+
+	public ComparisonTableModel(boolean showNamespace) {
 		data = new ArrayList<Entry>();
+		this.showNamespace = showNamespace;
 	}
 
 	public void addEntry(Entry e) {
@@ -54,8 +57,21 @@ public class ComparisonTableModel extends AbstractTableModel {
 				return "0x" + Long.toHexString(e.primaryAddress.getUnsignedOffset());
 			return "";
 		case 2:
-			if (e.primaryFunctionSymbol != null)
-				return e.primaryFunctionSymbol.getName();
+			if (e.primaryFunctionSymbol != null){
+				if (showNamespace) {
+					var functionNameComponents = new ArrayList<String>();
+					var parentNamespace = e.primaryFunctionSymbol.getParentNamespace();
+					while (parentNamespace != null && !"Global".equals(parentNamespace.getName())) {
+						functionNameComponents.add(0, parentNamespace.getName());
+						parentNamespace = parentNamespace.getParentNamespace();
+					}
+					// Add the name of the function as the last component.
+					functionNameComponents.add(e.primaryFunctionSymbol.getName());
+					return String.join("::", functionNameComponents);
+				} else {
+					return e.primaryFunctionSymbol.getName();
+				}
+			}
 			return "No Symbol";
 		case 3:
 			if (e.primaryFunctionNameDb != null)
