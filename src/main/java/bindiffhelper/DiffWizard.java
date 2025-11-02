@@ -7,7 +7,9 @@ import java.awt.Dimension;
 import java.awt.GridLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.io.File;
 import java.util.Collections;
+import java.util.List;
 
 import javax.swing.BorderFactory;
 import javax.swing.Box;
@@ -15,6 +17,7 @@ import javax.swing.BoxLayout;
 import javax.swing.ButtonGroup;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
+import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JRadioButton;
@@ -22,13 +25,13 @@ import javax.swing.JRadioButton;
 import bindiffhelper.BinDiffHelperProvider.DiffState;
 import docking.Tool;
 import docking.widgets.filechooser.GhidraFileChooserPanel;
+import docking.widgets.filechooser.GhidraFileChooserPanelListener;
 import docking.widgets.tree.support.GTreeSelectionEvent;
 import docking.widgets.tree.support.GTreeSelectionListener;
-import docking.wizard.AbstractWizardJPanel;
-import docking.wizard.IllegalPanelStateException;
-import docking.wizard.PanelManager;
-import docking.wizard.WizardManager;
-import docking.wizard.WizardPanel;
+
+import docking.wizard.WizardModel;
+import docking.wizard.WizardStep;
+
 import ghidra.app.services.CodeViewerService;
 import ghidra.framework.main.AppInfo;
 import ghidra.framework.main.datatree.ProjectDataTreePanel;
@@ -38,19 +41,35 @@ import ghidra.program.model.listing.Program;
 import ghidra.util.Msg;
 import ghidra.util.task.TaskMonitor;
 
-class DiffKindPanel extends AbstractWizardJPanel {
+class DiffWizardData {
+	public boolean isFromProject;
+	public boolean isSwapped;
+	
+	public boolean useProgram2;
+	public DomainFile program2Df;
+	public Program program2Program;
+	public CodeViewerService program2Cvs;
+
+	public DomainFile fromProjectDf;
+}
+
+class DiffKindStep extends WizardStep<DiffWizardData> {
 	private JRadioButton rbFromProject, rbFromExternal;
 	private GhidraFileChooserPanel extBDFilePanel;
 
 	private BinDiffHelperPlugin plugin;
 
-	private boolean loadedFromProject = false;
-
-	DiffKindPanel(BinDiffHelperPlugin plugin) {
-		super(new GridLayout(2, 1, 10, 10));
-		// setBorder(NewProjectPanelManager.EMPTY_BORDER);
-
+	private JPanel panel;
+	
+	public DiffKindStep(WizardModel<DiffWizardData> model, BinDiffHelperPlugin plugin) {
+		super(model, "Choose diffing method", null);
 		this.plugin = plugin;
+	}
+	
+	
+	public void initialize(DiffWizardData data) {
+		this.panel = new JPanel(new GridLayout(2, 1, 10, 10));
+		
 		ButtonGroup bg = new ButtonGroup();
 
 		rbFromProject = new JRadioButton("Diff with other file from ghidra project (select in next panel)");
@@ -66,7 +85,7 @@ class DiffKindPanel extends AbstractWizardJPanel {
 			JLabel lab = new JLabel("BinExport2 plugin or BinDiff binary not found - this feature is disabled.");
 			fromProjectPanel.add(lab);
 		}
-		add(fromProjectPanel);
+		this.panel.add(fromProjectPanel);
 
 		rbFromExternal = new JRadioButton("Use externally created .BinDiff file");
 		bg.add(rbFromExternal);
@@ -82,77 +101,102 @@ class DiffKindPanel extends AbstractWizardJPanel {
 		extBDFilePanel.setAlignmentX(Component.LEFT_ALIGNMENT);
 
 		extPanel.add(extBDFilePanel);
-
-		JButton extLoadBtn = new JButton("Load");
-		extLoadBtn.addActionListener(e -> loadCallback());
-		extPanel.add(extLoadBtn);
-		add(extPanel);
+		this.panel.add(extPanel);
 
 		if (rbFromProject.isEnabled())
 			rbFromProject.setSelected(true);
 		else
 			rbFromExternal.setSelected(true);
-
+		
 		ActionListener validityListener = new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				notifyListenersOfValidityChanged();
+				notifyStatusChanged();
 			}
 		};
 
 		rbFromProject.addActionListener(validityListener);
 		rbFromExternal.addActionListener(validityListener);
-	}
+		extBDFilePanel.setListener(new GhidraFileChooserPanelListener() {
+			@Override
+			public void fileChanged(File file) {
+				notifyStatusChanged();
+			}
 
-	protected void loadCallback() {
-		try {
-			plugin.provider.openExternalDB(extBDFilePanel.getFileName());
-			rbFromExternal.setSelected(true);
-			loadedFromProject = true;
-		} catch (Exception e) {
-			e.printStackTrace();
-			loadedFromProject = false;
-		}
-		notifyListenersOfValidityChanged();
-	}
-
-	@Override
-	public String getTitle() {
-		return "Choose diffing method";
+			@Override
+			public void fileDropped(File file) {
+				notifyStatusChanged();				
+			}
+		});
 	}
 
 	@Override
-	public boolean isValidInformation() {
+	public boolean isValid() {
 		if (rbFromProject.isSelected())
 			return true;
+		else if(!extBDFilePanel.getFileName().isBlank())
+			return true;
+		return false;
+	}
 
-		return loadedFromProject;
+
+	@Override
+	public JComponent getComponent() {
+		return this.panel;
 	}
 
 	@Override
-	public void initialize() {
+	public boolean canFinish(DiffWizardData data) {
+		// TODO Auto-generated method stub
+		return false;
 	}
 
-	public boolean isFromProject() {
-		return rbFromProject.isSelected();
+	@Override
+	public void populateData(DiffWizardData data) {
+		data.isFromProject = rbFromProject.isSelected();
+	}
+
+	@Override
+	public boolean apply(DiffWizardData data) {
+		if (rbFromExternal.isSelected()) {
+			try {
+				plugin.provider.openExternalDB(extBDFilePanel.getFileName());
+				//loadedFromProject = true;
+			} catch (Exception e) {
+				e.printStackTrace();
+				
+				Msg.showError(this, extBDFilePanel, "Error loading", e);
+				//loadedFromProject = false;
+				
+				return false;
+			}
+		}
+		return true;
 	}
 }
 
-class MatchPanel extends AbstractWizardJPanel {
+class MatchStep extends WizardStep<DiffWizardData> {
 	private JRadioButton rb0;
 	private JRadioButton rb1;
 	private BinDiffHelperPlugin plugin;
 
+	private JPanel panel;
+	
 	private String buildTable(String fn, String fnColor, String efn, String efnColor, String hash, String hashColor) {
+		hash = hash.substring(0, 12) + "..";
 		return "<html><table>" + "<tr><td>Filename</td><td style='color: " + fnColor + ";'>" + fn + "</td></tr>"
 				+ "<tr><td>Binary Filename</td><td style='color: " + efnColor + ";'>" + efn + "</td></tr>"
 				+ "<tr><td>SHA256</td><td style='color: " + hashColor + ";'>" + hash + "</td></tr>" + "</table></html>";
 	}
 
-	MatchPanel(BinDiffHelperPlugin plugin) {
-		super();
+	MatchStep(WizardModel<DiffWizardData> model, BinDiffHelperPlugin plugin) {
+		super(model, "Match the loaded file to the correct BinDiff file", null);
 
 		this.plugin = plugin;
+	}
+	
+	@Override
+	public void initialize(DiffWizardData data) {
 
 		JLabel instructions = new JLabel("<html><p style='width:300px;text-align:center;'>"
 				+ "The external BinDiff database has been loaded. "
@@ -209,48 +253,64 @@ class MatchPanel extends AbstractWizardJPanel {
 
 		work.add(panel, BorderLayout.PAGE_END);
 
-		add(work);
-
+		this.panel = work;
+		
 		ActionListener validityListener = new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				notifyListenersOfValidityChanged();
+				notifyStatusChanged();
 			}
 		};
-
 		rb0.addActionListener(validityListener);
 		rb1.addActionListener(validityListener);
 	}
 
-	@Override
-	public String getTitle() {
-		return "Match the loaded file to the correct BinDiff file";
-	}
 
 	@Override
-	public boolean isValidInformation() {
+	public boolean isValid() {
 		return rb0.isSelected() || rb1.isSelected();
 	}
 
+
 	@Override
-	public void initialize() {
+	public JComponent getComponent() {
+		return this.panel;
+	}
+
+	@Override
+	public boolean canFinish(DiffWizardData data) {
 		// TODO Auto-generated method stub
+		return false;
 	}
 
-	public boolean isSwapped() {
-		return rb1.isSelected();
+	@Override
+	public void populateData(DiffWizardData data) {
+		data.isSwapped = rb1.isSelected();
 	}
 
+	@Override
+	public boolean apply(DiffWizardData data) {
+		return true;
+	}
+
+	public boolean isApplicable(DiffWizardData data) {
+		return !data.isFromProject;
+	}
 }
 
-class FromProjectPanel extends AbstractWizardJPanel {
+class FromProjectStep extends WizardStep<DiffWizardData> {
 	private BinDiffHelperPlugin plugin;
 	private ProjectDataTreePanel tp;
-
-	FromProjectPanel(BinDiffHelperPlugin plugin) {
+	private JPanel panel;
+	
+	public FromProjectStep(WizardModel<DiffWizardData> model, BinDiffHelperPlugin plugin) {
+		super(model, "Select a file that will be diffed to the file which you have currently opened in the Code Explorer", null);
 		this.plugin = plugin;
-
-		JPanel panel = new JPanel();
+	}
+	
+	@Override
+	public void initialize(DiffWizardData data) {
+		panel = new JPanel();
 		panel.setLayout(new BoxLayout(panel, BoxLayout.PAGE_AXIS));
 
 		JPanel projectPanel;
@@ -261,11 +321,12 @@ class FromProjectPanel extends AbstractWizardJPanel {
 			tp.setPreferredSize(new Dimension(400, 300));
 
 			projectPanel = tp;
+			
 			tp.addTreeSelectionListener(new GTreeSelectionListener() {
 				@Override
 				public void valueChanged(GTreeSelectionEvent e) {
-					notifyListenersOfValidityChanged();
-				}
+					notifyStatusChanged();
+				}	
 			});
 		} else {
 			projectPanel = new JPanel();
@@ -278,16 +339,10 @@ class FromProjectPanel extends AbstractWizardJPanel {
 		panel.add(projectPanel);
 
 		panel.add(Box.createRigidArea(new Dimension(0, 20)));
-		add(panel);
 	}
 
 	@Override
-	public String getTitle() {
-		return "Select a file that will be diffed to the file which you have currently opened in the Code Explorer";
-	}
-
-	@Override
-	public boolean isValidInformation() {
+	public boolean isValid() {
 		if (tp == null || tp.getSelectedItemCount() != 1)
 			return false;
 
@@ -299,25 +354,49 @@ class FromProjectPanel extends AbstractWizardJPanel {
 	}
 
 	@Override
-	public void initialize() {
+	public boolean canFinish(DiffWizardData data) {
+		// TODO Auto-generated method stub
+		return false;
 	}
 
-	public DomainFile getDf() {
-		return tp.getSelectedDomainFile();
+	@Override
+	public void populateData(DiffWizardData data) {
+		data.fromProjectDf = tp.getSelectedDomainFile();
+	}
+
+	@Override
+	public boolean apply(DiffWizardData data) {
+		// TODO Auto-generated method stub
+		return true;
+	}
+
+	@Override
+	public JComponent getComponent() {
+		return panel;
+	}
+	
+	@Override
+	public boolean isApplicable(DiffWizardData data) {
+		return data.isFromProject;
 	}
 }
 
-class Program2Panel extends AbstractWizardJPanel {
+class Program2Step extends WizardStep<DiffWizardData> {
 	private BinDiffHelperPlugin plugin;
 	private ProjectDataTreePanel tp;
 	private JCheckBox cb;
 
-	private Program program;
-	private CodeViewerService cvs;
-
-	Program2Panel(BinDiffHelperPlugin plugin) {
+	private JPanel panel;
+	
+	public Program2Step(WizardModel<DiffWizardData> model, BinDiffHelperPlugin plugin) {
+		super(model, "Optionally attach another ghidra file to the secondary diff file", null);
 		this.plugin = plugin;
-		setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
+	}
+	
+	@Override
+	public void initialize(DiffWizardData data) {
+		this.panel = new JPanel();
+		this.panel.setLayout(new BoxLayout(this.panel, BoxLayout.Y_AXIS));
 
 		cb = new JCheckBox("Attach another ghidra file to the secondary diff file");
 
@@ -326,30 +405,14 @@ class Program2Panel extends AbstractWizardJPanel {
 
 		tp.setPreferredSize(new Dimension(400, 300));
 
-		tp.addTreeSelectionListener(new GTreeSelectionListener() {
-			@Override
-			public void valueChanged(GTreeSelectionEvent e) {
-				notifyListenersOfValidityChanged();
-			}
-		});
+		this.panel.add(cb);
+		this.panel.add(tp);
 
-		add(cb);
-		add(tp);
-		cb.addActionListener(new ActionListener() {
-			@Override
-			public void actionPerformed(ActionEvent e) {
-				notifyListenersOfValidityChanged();
-			}
-		});
 	}
 
-	@Override
-	public String getTitle() {
-		return "Optionally attach another ghidra file to the secondary diff file";
-	}
 
 	@Override
-	public boolean isValidInformation() {
+	public boolean isValid() {
 		if (!cb.isSelected())
 			return true;
 
@@ -364,174 +427,91 @@ class Program2Panel extends AbstractWizardJPanel {
 	}
 
 	@Override
-	public void initialize() {
+	public boolean canFinish(DiffWizardData data) {
+		// TODO Auto-generated method stub
+		return false;
 	}
 
-	public void open() {
-		try {
-			DomainFile df = tp.getSelectedDomainFile();
-			Tool newTool = plugin.getTool().getToolServices().launchDefaultTool(Collections.singletonList(df));
-			DomainObject domainObject = df.getDomainObject(this, true, false, TaskMonitor.DUMMY);
-			program = (Program) domainObject;
-			cvs = newTool.getService(CodeViewerService.class);
-		} catch (Exception e) {
-			Msg.showError(this, this, "Error", "Failed to open the program in new window: " + e.getMessage());
+	@Override
+	public void populateData(DiffWizardData data) {
+		data.useProgram2 = cb.isSelected();
+	}
+
+	@Override
+	public boolean apply(DiffWizardData data) {
+		if (cb.isSelected()) {
+			try {
+				data.program2Df = tp.getSelectedDomainFile();
+				Tool newTool = plugin.getTool().getToolServices().launchDefaultTool(Collections.singletonList(data.program2Df));
+				DomainObject domainObject = data.program2Df.getDomainObject(this, true, false, TaskMonitor.DUMMY);
+				data.program2Program = (Program) domainObject;
+				data.program2Cvs = newTool.getService(CodeViewerService.class);
+			} catch (Exception e) {
+				Msg.showError(this, tp, "Error", "Failed to open the program in new window: " + e.getMessage());
+				return false;
+			}
 		}
+		return true;
 	}
 
-	public boolean useProgram2() {
-		return cb.isSelected();
-	}
-
-	public CodeViewerService getCvs() {
-		return cvs;
-	}
-
-	public Program getProg() {
-		return program;
+	@Override
+	public JComponent getComponent() {
+		return this.panel;
 	}
 	
-	public DomainFile getDf() {
-		return tp.getSelectedDomainFile();
+	@Override
+	public boolean isApplicable(DiffWizardData data) {
+		return !data.isFromProject;
 	}
 }
 
-class DiffPanelManager implements PanelManager {
-	private WizardManager wizardMgr;
-	private DiffKindPanel dkPanel;
-	private MatchPanel matchPanel;
-	private FromProjectPanel fromProjectPanel;
-	private Program2Panel program2Panel;
-
+class DiffWizardModel extends WizardModel<DiffWizardData> {
 	private BinDiffHelperPlugin plugin;
-
-	DiffPanelManager(BinDiffHelperPlugin plugin) {
-		dkPanel = new DiffKindPanel(plugin);
+	
+	protected DiffWizardModel(BinDiffHelperPlugin plugin) {
+		super("Open Diff", new DiffWizardData());
 		this.plugin = plugin;
 	}
 
+	@Override protected Dimension getPreferredSize() {
+		return new Dimension(500, 400);
+	}
+	
 	@Override
-	public boolean canFinish() {
-		WizardPanel curPanel = wizardMgr.getCurrentWizardPanel();
-		if (curPanel == null)
-			return false;
-		if (curPanel == fromProjectPanel)
-			return true;
-		if (curPanel == program2Panel)
-			return true;
-		return false;
+	protected void addWizardSteps(List<WizardStep<DiffWizardData>> steps) {
+		steps.add(new DiffKindStep(this, plugin));
+		steps.add(new FromProjectStep(this, plugin));
+		steps.add(new MatchStep(this, plugin));
+		steps.add(new Program2Step(this, plugin));
 	}
 
 	@Override
-	public boolean hasNextPanel() {
-		WizardPanel curPanel = wizardMgr.getCurrentWizardPanel();
-		if (curPanel == null)
-			return true;
-		if (curPanel == fromProjectPanel)
-			return false;
-		if (curPanel == matchPanel)
-			return true;
-		if (curPanel == dkPanel)
-			return true;
-		if (curPanel == program2Panel)
-			return false;
-		return false;
-	}
-
-	@Override
-	public boolean hasPreviousPanel() {
-		WizardPanel curPanel = wizardMgr.getCurrentWizardPanel();
-		if (curPanel == null)
-			return false;
-		if (curPanel == fromProjectPanel)
-			return true;
-		if (curPanel == matchPanel)
-			return true;
-		if (curPanel == dkPanel)
-			return false;
-		if (curPanel == program2Panel)
-			return true;
-		return false;
-	}
-
-	@Override
-	public WizardPanel getNextPanel() throws IllegalPanelStateException {
-
-		if (wizardMgr.getCurrentWizardPanel() == null)
-			return dkPanel;
-
-		if (wizardMgr.getCurrentWizardPanel() == dkPanel) {
-			if (dkPanel.isFromProject()) {
-				fromProjectPanel = new FromProjectPanel(plugin);
-				return fromProjectPanel;
-			} else {
-				matchPanel = new MatchPanel(plugin);
-				return matchPanel;
-			}
-		}
-
-		if (wizardMgr.getCurrentWizardPanel() == matchPanel) {
-			program2Panel = new Program2Panel(plugin);
-			return program2Panel;
-		}
-
-		return null;
-	}
-
-	@Override
-	public WizardPanel getInitialPanel() throws IllegalPanelStateException {
-		return dkPanel;
-	}
-
-	@Override
-	public WizardPanel getPreviousPanel() throws IllegalPanelStateException {
-		WizardPanel curPanel = wizardMgr.getCurrentWizardPanel();
-		if (curPanel == null)
-			return null;
-		if (curPanel == fromProjectPanel)
-			return dkPanel;
-		if (curPanel == matchPanel)
-			return dkPanel;
-		if (curPanel == dkPanel)
-			return null;
-		if (curPanel == program2Panel)
-			return matchPanel;
-		return null;
-	}
-
-	@Override
-	public String getStatusMessage() {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public void finish() throws IllegalPanelStateException {
-		WizardPanel curPanel = wizardMgr.getCurrentWizardPanel();
-		if (curPanel == program2Panel) {
-			if (matchPanel.isSwapped()) {
+	protected boolean doFinish() {
+		if (!data.isFromProject) {
+			if (data.isSwapped) {
 				DiffState temp = plugin.provider.secondary;
 				plugin.provider.secondary = plugin.provider.primary;
 				plugin.provider.primary = temp;
 			}
 
-			if (program2Panel.useProgram2())
-				program2Panel.open();
-
-			plugin.provider.secondary.cvs = program2Panel.getCvs();
-			plugin.provider.secondary.prog = program2Panel.getProg();
-			plugin.provider.secondary.df = program2Panel.getDf();
+			if (data.useProgram2) {
+				plugin.provider.secondary.cvs = data.program2Cvs;
+				plugin.provider.secondary.prog = data.program2Program;
+				plugin.provider.secondary.df = data.program2Df;
+			}
+			
 			plugin.provider.doDiffWork();
-			wizardMgr.close();
 		} else {
 			// from project
-			DomainFile df = fromProjectPanel.getDf();
+			DomainFile df = data.fromProjectDf;
+			
 			plugin.callBinDiff(df, files -> {
 				if (files != null) {
 					try {
 						plugin.provider.openExternalDBWithBinExports(files[2].getAbsolutePath(), files[0], files[1]);
 					} catch (Exception e) {
 						e.printStackTrace();
+						Msg.showError(df, null, "error", "Error in openExternalDBWithBinExports() " + e.getLocalizedMessage());
 					}
 					plugin.provider.secondary.df = df;
 					try {
@@ -539,37 +519,14 @@ class DiffPanelManager implements PanelManager {
 						if (dof instanceof Program p)
 							plugin.provider.secondary.prog = p;
 					} catch (Exception e) {
-						
+						Msg.showError(df, null, "error", "error in getReadOnlyDomainObject() " + e.getLocalizedMessage());
 					}
 					plugin.provider.doDiffWork();
-					wizardMgr.close();
 				}
 			});
 		}
+		
+		return true;
 	}
-
-	@Override
-	public void cancel() {
-		// TODO Auto-generated method stub
-	}
-
-	@Override
-	public void initialize() {
-		// TODO Auto-generated method stub
-	}
-
-	@Override
-	public Dimension getPanelSize() {
-		return new Dimension(1000, 400);
-	}
-
-	@Override
-	public void setWizardManager(WizardManager wm) {
-		wizardMgr = wm;
-	}
-
-	@Override
-	public WizardManager getWizardManager() {
-		return wizardMgr;
-	}
+	
 }

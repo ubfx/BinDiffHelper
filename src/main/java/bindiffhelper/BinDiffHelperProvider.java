@@ -48,7 +48,7 @@ import docking.action.DockingAction;
 import docking.action.MenuData;
 import docking.action.ToolBarData;
 import docking.widgets.table.GTable;
-import docking.wizard.WizardManager;
+import docking.wizard.WizardDialog;
 import ghidra.app.decompiler.DecompInterface;
 import ghidra.app.decompiler.DecompileResults;
 import ghidra.app.events.ProgramLocationPluginEvent;
@@ -512,10 +512,9 @@ public class BinDiffHelperProvider extends ComponentProviderAdapter {
 
 		@Override
 		public void actionPerformed(ActionContext context) {
-			// DockingWindowManager.showDialog(new GeneralOpenDialog(plugin));
-			DiffPanelManager panelManager = new DiffPanelManager(plugin);
-			WizardManager wm = new WizardManager("New Diff", true, panelManager);
-			wm.showWizard(tool.getToolFrame());
+			var model = new DiffWizardModel(plugin);
+			var wizardDialog = new WizardDialog(model);
+			plugin.getTool().showDialog(wizardDialog);
 		}
 	}
 
