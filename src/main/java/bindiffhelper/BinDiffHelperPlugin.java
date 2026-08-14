@@ -311,7 +311,7 @@ public class BinDiffHelperPlugin extends ProgramPlugin {
 	
 	public void updateDiffCommand(String cmd)
 	{
-		diffCommand = cmd == null || cmd.isEmpty() ? defaultDiffCommand : cmd;
+		diffCommand = cmd == null || cmd.isBlank() ? defaultDiffCommand : cmd;
 		Preferences.setProperty(DIFFCOMMAND, cmd);
 	}
 
