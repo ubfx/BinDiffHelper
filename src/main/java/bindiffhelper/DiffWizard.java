@@ -408,6 +408,13 @@ class Program2Step extends WizardStep<DiffWizardData> {
 		this.panel.add(cb);
 		this.panel.add(tp);
 
+		cb.addActionListener(e -> notifyStatusChanged());
+		tp.addTreeSelectionListener(new GTreeSelectionListener() {
+			@Override
+			public void valueChanged(GTreeSelectionEvent e) {
+				notifyStatusChanged();
+			}
+		});
 	}
 
 
