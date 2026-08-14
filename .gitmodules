@@ -1,3 +1,3 @@
 [submodule "binexport"]
 	path = binexport
-	url = https://github.com/google/binexport.git
+	url = https://github.com/abd3lraouf-studios/binexport-ghidra-12.git
