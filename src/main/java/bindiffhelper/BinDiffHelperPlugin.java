@@ -105,13 +105,16 @@ public class BinDiffHelperPlugin extends ProgramPlugin {
 			
 		}
 
-		if (System.getProperty("os.name").toLowerCase().contains("win")) {
+		String os = System.getProperty("os.name").toLowerCase();
+		if (os.contains("win")) {
 			defaultBinPath = "C:\\Program Files\\BinDiff\\bin\\bindiff.exe";
 			defaultDiffCommand = "notepad++ -multiInst -nosession -lc -pluginMessage=compare \"$file1\" \"$file2\"";
-		}
-		if (System.getProperty("os.name").toLowerCase().contains("nix")) {
-			// defaultBinPath = "/opt/bindiff/bin/bindiff";
-			defaultDiffCommand = "x-terminal-emulator -e 'diff -u \"$file1\" \"$file2\"'";
+		} else if (os.contains("mac")) {
+			defaultBinPath = "/Applications/BinDiff/BinDiff.app/Contents/MacOS/bin/bindiff";
+			defaultDiffCommand = "opendiff \"$file1\" \"$file2\"";
+		} else { // Linux/BSD
+			defaultBinPath = "/opt/bindiff/bin/bindiff";
+			defaultDiffCommand = "meld \"$file1\" \"$file2\"";
 		}
 
 		binDiffBinary = Preferences.getProperty(BDBINPROPERTY, defaultBinPath);
