@@ -435,8 +435,7 @@ class Program2Step extends WizardStep<DiffWizardData> {
 
 	@Override
 	public boolean canFinish(DiffWizardData data) {
-		// TODO Auto-generated method stub
-		return false;
+		return true;
 	}
 
 	@Override
@@ -446,7 +445,7 @@ class Program2Step extends WizardStep<DiffWizardData> {
 
 	@Override
 	public boolean apply(DiffWizardData data) {
-		if (cb.isSelected()) {
+		if (data.useProgram2) {
 			try {
 				data.program2Df = tp.getSelectedDomainFile();
 				Tool newTool = plugin.getTool().getToolServices().launchDefaultTool(Collections.singletonList(data.program2Df));
@@ -465,7 +464,7 @@ class Program2Step extends WizardStep<DiffWizardData> {
 	public JComponent getComponent() {
 		return this.panel;
 	}
-	
+
 	@Override
 	public boolean isApplicable(DiffWizardData data) {
 		return !data.isFromProject;
