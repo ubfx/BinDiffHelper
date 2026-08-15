@@ -420,9 +420,9 @@ class Program2Step extends WizardStep<DiffWizardData> {
 
 	@Override
 	public boolean isValid() {
-		Msg.showInfo(this, "selected count = " + tp.getSelectedItemCount());
-		Msg.showInfo(this, "selected folder = " + tp.getSelectedDomainFolder());
-		Msg.showInfo(this, "selected file = " + tp.getSelectedDomainFile());
+		Msg.debug(this, "selected count = " + tp.getSelectedItemCount());
+		Msg.debug(this, "selected folder = " + tp.getSelectedDomainFolder());
+		Msg.debug(this, "selected file = " + tp.getSelectedDomainFile());
 
 		return true;
 		// if (!cb.isSelected())
