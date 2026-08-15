@@ -346,17 +346,13 @@ class FromProjectStep extends WizardStep<DiffWizardData> {
 		if (tp == null || tp.getSelectedItemCount() != 1)
 			return false;
 
-		if (tp.getSelectedDomainFolder() != null)
-			return false;
-
 		var df = tp.getSelectedDomainFile();
 		return df != null;
 	}
 
 	@Override
 	public boolean canFinish(DiffWizardData data) {
-		// TODO Auto-generated method stub
-		return false;
+		return isValid();
 	}
 
 	@Override
@@ -420,27 +416,19 @@ class Program2Step extends WizardStep<DiffWizardData> {
 
 	@Override
 	public boolean isValid() {
-		Msg.debug(this, "selected count = " + tp.getSelectedItemCount());
-		Msg.debug(this, "selected folder = " + tp.getSelectedDomainFolder());
-		Msg.debug(this, "selected file = " + tp.getSelectedDomainFile());
+		if (!cb.isSelected())
+			return true;
 
-		return true;
-		// if (!cb.isSelected())
-		// 	return true;
+		if (tp == null || tp.getSelectedItemCount() != 1)
+			return false;
 
-		// if (tp == null || tp.getSelectedItemCount() != 1)
-		// 	return false;
-
-		// if (tp.getSelectedDomainFolder() != null)
-		// 	return false;
-
-		// var df = tp.getSelectedDomainFile();
-		// return df != null;
+		var df = tp.getSelectedDomainFile();
+		return df != null;
 	}
 
 	@Override
 	public boolean canFinish(DiffWizardData data) {
-		return true;
+		return isValid();
 	}
 
 	@Override
