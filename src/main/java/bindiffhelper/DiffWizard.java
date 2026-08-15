@@ -416,7 +416,7 @@ class Program2Step extends WizardStep<DiffWizardData> {
 
 	@Override
 	public boolean isValid() {
-		if (!cb.isSelected())
+		if (cb == null || !cb.isSelected())
 			return true;
 
 		if (tp == null || tp.getSelectedItemCount() != 1)
