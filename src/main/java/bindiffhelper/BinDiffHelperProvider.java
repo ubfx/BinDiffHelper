@@ -447,7 +447,14 @@ public class BinDiffHelperProvider extends ComponentProviderAdapter {
 
 						String command = plugin.diffCommand.replace("$file1", path1.toString()).replace("$file2",
 								path2.toString());
-						Runtime.getRuntime().exec(command);
+
+						if (System.getProperty("os.name").toLowerCase().contains("win")) {
+							String[] shellCommand = { "cmd.exe", "/c", command };
+							Runtime.getRuntime().exec(shellCommand);
+						} else {
+							String[] shellCommand = { "/bin/sh", "-c", command };
+							Runtime.getRuntime().exec(shellCommand);
+						}
 					} catch (Exception ex) {
 						Msg.showError(this, getComponent(), "Error", ex.getMessage());
 					}
