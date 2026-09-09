@@ -20,7 +20,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        ghidra: ${{ fromJSON(format('[{0}]', inputs.ghidra_version || '"latest","11.4.2","11.4.1","11.4"')) }}
+        ghidra: ${{ fromJSON(format('[{0}]', inputs.ghidra_version || '"latest","12.1","12.0","11.4.3","11.4.2","11.4.1","11.4"')) }}
 
     steps:
     - name: Clone Repository
