@@ -6,6 +6,9 @@ Check out the [BinDiff manual](https://www.zynamics.com/bindiff/manual/) to see 
 **Please report bugs via the issue feature on github**
 
 ## Changelog
+### v0.7.1
+* Update for Ghidra 12
+
 ### v0.7.0 (Ghidra versions >= 11.4)
 * No changes except Ghidra version compatibility
 
