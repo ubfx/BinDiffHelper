@@ -346,17 +346,13 @@ class FromProjectStep extends WizardStep<DiffWizardData> {
 		if (tp == null || tp.getSelectedItemCount() != 1)
 			return false;
 
-		if (tp.getSelectedDomainFolder() != null)
-			return false;
-
 		var df = tp.getSelectedDomainFile();
 		return df != null;
 	}
 
 	@Override
 	public boolean canFinish(DiffWizardData data) {
-		// TODO Auto-generated method stub
-		return false;
+		return isValid();
 	}
 
 	@Override
@@ -408,18 +404,22 @@ class Program2Step extends WizardStep<DiffWizardData> {
 		this.panel.add(cb);
 		this.panel.add(tp);
 
+		cb.addActionListener(e -> notifyStatusChanged());
+		tp.addTreeSelectionListener(new GTreeSelectionListener() {
+			@Override
+			public void valueChanged(GTreeSelectionEvent e) {
+				notifyStatusChanged();
+			}
+		});
 	}
 
 
 	@Override
 	public boolean isValid() {
-		if (!cb.isSelected())
+		if (cb == null || !cb.isSelected())
 			return true;
 
 		if (tp == null || tp.getSelectedItemCount() != 1)
-			return false;
-
-		if (tp.getSelectedDomainFolder() != null)
 			return false;
 
 		var df = tp.getSelectedDomainFile();
@@ -428,8 +428,7 @@ class Program2Step extends WizardStep<DiffWizardData> {
 
 	@Override
 	public boolean canFinish(DiffWizardData data) {
-		// TODO Auto-generated method stub
-		return false;
+		return isValid();
 	}
 
 	@Override
@@ -439,7 +438,7 @@ class Program2Step extends WizardStep<DiffWizardData> {
 
 	@Override
 	public boolean apply(DiffWizardData data) {
-		if (cb.isSelected()) {
+		if (data.useProgram2) {
 			try {
 				data.program2Df = tp.getSelectedDomainFile();
 				Tool newTool = plugin.getTool().getToolServices().launchDefaultTool(Collections.singletonList(data.program2Df));
@@ -458,7 +457,7 @@ class Program2Step extends WizardStep<DiffWizardData> {
 	public JComponent getComponent() {
 		return this.panel;
 	}
-	
+
 	@Override
 	public boolean isApplicable(DiffWizardData data) {
 		return !data.isFromProject;
